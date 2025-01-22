@@ -1,0 +1,12 @@
+---
+title: "LAB0"
+author: "Mountain Dewds"
+format: pdf
+editor: visual
+---
+
+## Individual Assigments
+
+## Team Assignment
+
+## Applied Team Assigment
