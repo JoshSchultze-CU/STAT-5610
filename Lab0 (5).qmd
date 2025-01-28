@@ -336,7 +336,7 @@ knn5 <- data.frame(testing, Predicted = knn5_predictions)
 Q2: The model uses the collected data to predict whether a player should be traded based on their PPG and salary, looking for patterns that help identify which players are likely to be traded.
 
 Q3: For a player with X1 = 15 (PPG) and X2 = 10 million (salary), the model predicted that they should not be traded. This shows that performance and salary alone may not always result in a trade, and other factors might be influencing the decision.
-```
+
 
 
 Will:
