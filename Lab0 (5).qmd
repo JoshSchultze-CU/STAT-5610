@@ -311,10 +311,10 @@ knn5 <- data.frame(testing, Predicted = knn5_predictions)
 
 3.  I was unable to figure out how to do this.
 
-4.  Q1: A sports team wants to decide if they should trade a player based on their performance and salary. They collected data on factors such as the player's average points per game (PPG) and their annual salary. Q1 in this case X1 being the player's PPG and X2 being their salary. The class, Y, is whether or not the player should be traded. X1 represents the player's performance (PPG), and X2 is their cost (salary). This is important because it helps the team determine if a player’s performance justifies their salary and whether a trade would be beneficial for the team’s overall strategy.
+4.  Q1: A sports team wants to decide if they should trade a player based on their performance and salary. They collected data on factors such as the player's average points per game (PPG) and their annual salary. Q1 in this case X1 being the player's PPG and X2 being their salary. The class, Y, is whether or not the player should be traded. This is important because it helps the team determine if a player’s performance justifies their salary and whether a trade would be beneficial for the team’s overall strategy.
 
 ```         
-Q2: The model uses the collected data to predict whether a player should be traded based on their PPG and salary, looking for patterns and decision boundaries that help identify which players are likely to be traded.
+Q2: The model uses the collected data to predict whether a player should be traded based on their PPG and salary, looking for patterns that help identify which players are likely to be traded.
 
 Q3: For a player with X1 = 15 (PPG) and X2 = 10 million (salary), the model predicted that they should not be traded. This shows that performance and salary alone may not always result in a trade, and other factors might be influencing the decision.
 ```
