@@ -86,6 +86,17 @@ So, create your individual test dataset (using random seed=201, 202, 203, or 204
 # Create the training dataset as above using seed=200
 # Create a testing dataset using seed=201, 202, 203, or 204
 
+
+
+```
+
+#### What individuals need to do
+
+**JOSH \[Seed=201, Test Point = (0.25,0.25)\]**
+
+Creating my Testing data set:
+
+```{r}
 set.seed(201)
 n = 1000
 X1 <- runif(n,0,1)
@@ -101,12 +112,7 @@ sum(Y)
 testing <- data.frame(X1,X2,Y) #combining all of my variables into a training dataset
 ggplot(data=testing, aes(x=X1, y=X2, color=Y)) +
   geom_point()
-
 ```
-
-#### What individuals need to do
-
-**JOSH \[Seed=201, Test Point = (0.25,0.25)\]**
 
 1.  Given the training set (seed=200), fit:
     1.  logistic regression model
