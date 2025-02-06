@@ -618,4 +618,50 @@ From an ethical standpoint, it’s important to consider the potential consequen
 
 1.  Summarize the models' performance using all of the results from each individual.
 
-2.  Which is the best model to use in this situation?
+    Below is a summary of the averaged sensitivity, specificity, and classification rates for each model
+
+    **Logarithmic Regression**
+
+    ```{r}
+    log_avg_specificty=
+    log_avg_sensitivity=
+    log_avg_misclassification=
+    ```
+
+    **LDA**
+
+    ```{r}
+    lda_avg_specificty
+    lda_avg_sensitivity
+    lda_avg_misclassification
+    ```
+
+    **QDA**
+
+    ```{r}
+    qda_avg_specificty
+    qda_avg_sensitivity
+    qda_avg_misclassification
+    ```
+
+    **Naive Bayes**
+
+    ```{r}
+    nb_avg_specificty
+    nb_avg_sensitivity
+    nb_avg_misclassification
+    ```
+
+    **KNN with 6**
+
+    ```{r}
+    knn6_avg_specificty
+    knn6_avg_sensitivity
+    knn6_avg_misclassification
+    ```
+
+**Summary of Averaged Values**
+
+1.  Which is the best model to use in this situation?
+
+In this situation, we decided that the best model to use is
