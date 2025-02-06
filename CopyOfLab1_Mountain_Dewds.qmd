@@ -1,0 +1,478 @@
+---
+title: "Lab1"
+author: "Mountain Dewds"
+format: pdf
+editor: visual
+date: 2025-02-02
+---
+
+## Lab1: Comparing Classification Methods
+
+**Due: 11:59PM Friday, February 7 on Canvas as a knitted pdf file of your team's Quarto document**
+
+1.  You will individually fit five classification models and compare their sensitivities and specificities.
+2.  You will interpret these models and make a prediction in your individual section.
+3.  As a team, you will create one visualization that summarizes the performance of the models.
+
+### Instructions for Lab1
+
+In Lab0, the professor created a generating model for Y variables taking on 0 or 1 values based on the X1 and X2 inputs. You came up with the backstory for what Y, X1, and X2 were and why it was important to use X1 and X2 to predict Y.
+
+In this lab, you will apply four newly learned statistical learning methods to continue your analyses for how to best predict or explain Y from X1 and X2. You should continue to use the Q1 qualitative context you developed in Lab0 (or you can develop a new one if you want).
+
+Each individual will fit five classification models on a training dataset and then evaluate how well those models classify Y based on a test dataset. Individuals will make a prediction given (x1, x2) and then interpret their prediction and make a recommendation for action. Just as in Lab0, each individual will describe the Q1, Q2, and Q3 for this "project". Specifically, for Q1: What is Y, X1, and X2, and why should we care?. Train your five models on the training set, compare the sensitivity and specificity of the models on the test set, make a prediction given (x1, x2) (this is Q2). Then describe what actions (Q3) you recommend given your Q1 context and your Q2 results. Reflect on some ethical aspect of this project.
+
+#### Generating Model
+
+We have a logistic regression generating model. Given $x_1 \in [0,1]$ and $x_2 \in [0,1], Y \sim Ber(p)$, where $p$ is related to $x_1$ and $x_2$ through the logistic link function: $\log(\frac{p}{(1-p)}) = x_1 -2x_2 -2{x_1}^{2} + {x_2}^{2} + 3{x_1}{x_2} +4{x_1}{x_2}^2 -3{x_1}^{2}x_2$, where $\log$ is the natural log, sometimes written as $\ln$.
+
+The code for this is below.
+
+```{r}
+library(class)
+suppressPackageStartupMessages(library(tidyverse))
+```
+
+```{r}
+#Generative model
+set.seed(200) #setting a random seed so that we can
+#reproduce everything exactly if we want to
+
+generate_y <- function(x1,x2) { #two input parameters to generate the output y
+  logit <- x1 -2*x2 -2*x1^2 + x2^2 + 3*x1*x2 +4*x1*x2^2 -3*x1^2*x2
+  p <- exp(logit)/(1+exp(logit)) #apply the inverse logit function
+  y <- rbinom(1,1,p) #y becomes a 0 (with prob 1-p) or a 1 with probability p
+}
+```
+
+#### Training dataset
+
+We are going to use our generating model to create a training dataset of 1000 predictors (x1, x2), and then 1000 outcomes. Then we plot all three variables to see what our training data looks like.
+
+```{r}
+# Generate a training dataset with 1000 points
+set.seed(200)
+n = 1000
+X1 <- runif(n,0,1)
+X2 <- runif(n,0,1)
+
+#I'm going to use a for loop to generate 1000 y's
+Y <- rep(0,n) #initializing my Y to be a vector of 0's
+for (i in 1:n) {
+  Y[i] <- generate_y(X1[i],X2[i])
+}
+
+sum(Y) #How many 0's and 1's were predicted? In this
+#training set, almost 53% were 1's. When n is very large
+# about 51.5% of the Y's are 1's. That's really close to
+# 50/50 so we shouldn't have issues with "imbalance"
+# which is something we'll learn about later in the 
+# semester.
+
+training <- data.frame(X1,X2,Y) #combining all of my variables into a training dataset
+ggplot(data=training, aes(x=X1, y=X2, color=Y)) +
+  geom_point()
+```
+
+How well will various classifiers predict Y given new x1 and x2 values?
+
+#### Test datasets
+
+Each individual will generate a test set of 1000 predictors (x1, x2) and outcomes (y) that we will use as our "ground truth".
+
+So, create your individual test dataset (using random seed=201, 202, 203, or 204; each teammate has a different test dataset).
+
+```{r}
+# Create the training dataset as above using seed=200
+# Create a testing dataset using seed=201, 202, 203, or 204
+
+
+
+```
+
+#### What individuals need to do
+
+**JOSH \[Seed=201, Test Point = (0.25,0.25)\]**
+
+Creating my Testing data set:
+
+```{r}
+set.seed(201)
+n = 1000
+X1 <- runif(n,0,1)
+X2 <- runif(n,0,1)
+#I'm going to use a for loop to generate 1000 y's
+Y <- rep(0,n) #initializing my Y to be a vector of 0's
+for (i in 1:n) {
+  Y[i] <- generate_y(X1[i],X2[i])
+}
+
+sum(Y)
+
+testing <- data.frame(X1,X2,Y) #combining all of my variables into a training dataset
+ggplot(data=testing, aes(x=X1, y=X2, color=Y)) +
+  geom_point()
+```
+
+1.  Given the training set (seed=200), fit:
+    1.  logistic regression model
+
+```{r}
+logistic_regression<-glm(Y~X1+X2, family=binomial, data = training)
+summary(logistic_regression)
+```
+
+2.  linear discriminant analysis (LDA)
+
+```{r}
+library(MASS)
+ldafit<-lda(Y~X1+X2,data=training)
+ldafit
+```
+
+3.  quadratic discriminant analysis (QDA)
+
+```{r}
+qdafit<-qda(Y~X1+X2,data=training)
+qdafit
+```
+
+4.  naive Bayes
+
+```{r}
+
+library(e1071)
+naivebayesfit <- naiveBayes(Y~X1+X2,data=training)
+naivebayesfit
+```
+
+5.  KNN with k=optimal k from Lab0.
+
+    Our optimal k was determined to be k=6.
+
+```{r}
+    knn6predictions <- knn(train=training[,1:2], cl=training[,3], test = testing[,1:2], k = 6)
+
+```
+
+2.  Calculate the sensitivity, specificity, and overall error rate (misclassification rate) for each model given your test set (your seed=201 or 202 or 203 or 204).
+
+    This was done in the same order that the models were found in. Recall that sensitivity is the rate of correct observations with the condition and specificity is the rate of correct observations without the condition.
+
+```{r}
+
+##Load Caret
+library(caret)
+probpredictions<-predict(logistic_regression,newdata=testing)
+
+    predictions<-ifelse(probpredictions>0.5,1,0)
+   
+    print(confusionMatrix(as.factor(predictions),as.factor(testing$Y)))
+
+    confmatrix<-table(predictions,testing$Y)
+
+  
+
+    log_regression_specificity=confmatrix[1,1]/sum(confmatrix[,1])
+    log_regression_sensitivity=confmatrix[2,2]/sum(confmatrix[,2])
+    log_regression_misclassification=sum(predictions!=testing$Y)/length(predictions)
+
+    print(log_regression_sensitivity)
+    print(log_regression_specificity)
+    print(log_regression_misclassification)
+```
+
+```{r}
+    lda_predictions<-predict(ldafit,newdata=testing)
+
+
+    #This was easier for me to index for the time being
+    confmatrix<-table(lda_predictions$class,testing$Y)
+
+
+    lda_specificity=confmatrix[1,1]/sum(confmatrix[,1])
+    lda_sensitivity=confmatrix[2,2]/sum(confmatrix[,2])
+    lda_misclassification=sum(lda_predictions$class !=testing$Y)/length(lda_predictions$class)
+
+    print(lda_sensitivity)
+    print(lda_specificity)
+    print(lda_misclassification)
+```
+
+```{r}
+qda_predictions<-predict(qdafit,newdata=testing)
+    
+    #confusion matrix with caret
+
+
+    confmatrix<-table(qda_predictions$class,testing$Y)
+    
+    print(confmatrix)
+
+    qda_specificity=confmatrix[1,1]/sum(confmatrix[,1])
+    qda_sensitivity=confmatrix[2,2]/sum(confmatrix[,2])
+    qda_misclassification=sum(qda_predictions$class !=testing$Y)/length(qda_predictions$class)
+
+    print(qda_sensitivity)
+    print(qda_specificity)
+    print(qda_misclassification)
+
+
+```
+
+```{r}
+
+nb_predictions<-predict(naivebayesfit,newdata=testing)
+
+    
+    #confusion matrix with caret
+    print(confusionMatrix(as.factor(nb_predictions),as.factor(testing$Y)))
+
+    #This was easier for me to index for the time being
+    confmatrix<-table(nb_predictions,testing$Y)
+
+    print(confmatrix)
+
+    nb_specificity=confmatrix[1,1]/sum(confmatrix[,1])
+    nb_sensitivity=confmatrix[2,2]/sum(confmatrix[,2])
+    nb_misclassification=sum(nb_predictions !=testing$Y)/length(nb_predictions)
+
+    print(nb_sensitivity)
+    print(nb_specificity)
+    print(nb_misclassification)
+
+```
+
+```{r}
+ #confusion matrix with caret
+    print(confusionMatrix(as.factor(knn6predictions),as.factor(testing$Y)))
+          
+
+    #This was easier for me to index for the time being
+
+    #Predictions matrix already created in part 1
+confmatrix<-table(knn6predictions,testing$Y)
+
+    
+
+
+    knn6_specificity=confmatrix[1, 1]/sum(confmatrix[,1])
+    knn6_sensitivity=confmatrix[2,2]/sum(confmatrix[,2])
+    knn6_misclassification=sum(knn6predictions !=testing$Y)/length(knn6predictions)
+
+    print(knn6_sensitivity)
+    print(knn6_specificity)
+    print(knn6_misclassification)
+```
+
+3.  a prediction for a new point (x1, x2) = (0.25, 0.25) or (0.25, 0.75) or (0.75, 0.25) or (0.75, 0.75) for each fitted model. Each individual will have a different point for their predictions.
+
+    ```{r}
+    #Below are my choices for x1 and x2
+    x1=0.25
+    x2=0.25
+    newpoint=data.frame(X1=x1,X2=x2)
+
+    #Below is a prediction for logistic regression
+    logistic_regression_prediction<- predict(logistic_regression,newpoint,type="response") 
+    print(logistic_regression_prediction)
+    #Below is a prediction for LDA
+    print(predict(ldafit,newpoint,type="class"))
+
+    #Below is a prediction for QDA
+    print(predict(qdafit,newpoint,type="class"))
+
+    #Below is a prediction for Naive Bayes
+    print(predict(naivebayesfit,newpoint,type="class"))
+
+    #Below is a prediction for KNN with k=6
+
+    knn6prediction_newpoint <- knn(train=training[,1:2], cl=training[,3], test = newpoint, k = 6)
+
+    print(knn6prediction_newpoint)
+    ```
+
+4.  Summarize the Q1, Q2, and Q3 aspects of this "project."
+
+    What is Y, X1, and X2, and why should we care?. Train your five models on the training set, compare the sensitivity and specificity of the models on the test set, make a prediction given (x1, x2) (this is Q2). Then describe what actions (Q3) you recommend given your Q1 context and your Q2 results. Reflect on some ethical aspect of this project.
+
+    For this problem we will interpret Y as classifying if a house is above the median sale price in CO, or if it is equal to or below the median sale price. X1 will represent the average yearly sun exposure to the house (using amount of time direct sunlight is hitting the house), and X2 will represent the time (over business hours) of mail deliveries to the house.
+
+    The Q1 portion of this project is data collected of house sales, average yearly sun exposure to the house, and time of mail deliveries to the house. This data was collected by a real estate company trying to maximize house sales and prices for their company. Most importantly, they want to know if sunlight and mail delivery times can be an indicator of higher sale prices in houses.
+
+    The Q2 portion of this project is fitting different classification models, using our best model and predicting on a new house with values of (0.25,0.25). As seen in the model predictions matrix below, our Naive Bayes model seems to have the lowest misclassification rate (0.376) and relatively good sensitivity and specificity values of about 0.640 and 0.606, respectively. Using this model, we then predict that a new house with values of (0.25,0.25) will sell below the median sale price of houses in CO (Y=0).
+
+    So, if we were to give a recommendation to this company based on the naive Bayes model, we would recommend that they not buy the house with values of (0.25,0.25) because it will likely not sell highly. Unfortunately, since the misclassification rate is still fairly high, this is probably not the best model to base predictions solely off of.
+
+    EXTRA: For the sake of making further computations easier down the line, I saved the relevant variables into a data frame below:
+
+    ```{r}
+    logistic_regressions_stats<-data.frame("Model"="Logistic Regression","Sensitivity"=log_regression_sensitivity, "Specificity"=log_regression_specificity, "Misclassification"=log_regression_misclassification)
+
+    lda_stats<-data.frame("Model"="LDA",  "Sensitivity"=lda_sensitivity, "Specificity"=lda_specificity, "Misclassification"=lda_misclassification)
+
+    qda_stats<-data.frame("Model"="QDA",  "Sensitivity"=qda_sensitivity, "Specificity"=qda_specificity, "Misclassification"=qda_misclassification)
+
+    nb_stats<-data.frame("Model"="Naive Bayes", "Sensitivity"=nb_sensitivity, "Specificity"=nb_specificity, "Misclassification"=nb_misclassification)
+
+    knn6_stats<-data.frame("Model"="KNN, K=6", "Sensitivity"=knn6_sensitivity, "Specificity"=knn6_specificity, "Misclassification"=knn6_misclassification)
+
+    josh_model_predictions<-rbind(logistic_regressions_stats,lda_stats,qda_stats,nb_stats,knn6_stats)
+
+    josh_model_predictions
+    ```
+
+Rishi Section
+
+```{r}
+library(class)         
+library(MASS)           
+library(e1071)          
+library(caret)          
+```
+
+```{r}
+set.seed(200)
+
+generate_y <- function(x1, x2) {
+  logit <- x1 - 2*x2 - 2*x1^2 + x2^2 + 3*x1*x2 + 4*x1*x2^2 - 3*x1^2*x2
+  p <- exp(logit) / (1 + exp(logit))  # logistic link
+  return(rbinom(1, 1, p))
+}
+
+n <- 1000
+X1 <- runif(n, 0, 1)
+X2 <- runif(n, 0, 1)
+Y <- sapply(1:n, function(i) generate_y(X1[i], X2[i]))
+
+```
+
+Creating the training and testing data
+
+```{r}
+training_data <- data.frame(X1, X2, Y)
+set.seed(204)
+trainIndex <- createDataPartition(training_data$Y, p = 0.5, list = FALSE)
+train_data <- training_data[trainIndex, ]
+test_data <- training_data[-trainIndex, ]
+
+```
+
+Logistic regression
+
+```{r}
+log_reg <- glm(Y ~ X1 + X2, family = binomial, data = train_data)
+y_pred_log_reg <- predict(log_reg, newdata = test_data, type = "response")
+y_pred_log_reg <- ifelse(y_pred_log_reg > 0.5, 1, 0)
+
+```
+
+LDA
+
+```{r}
+lda_model <- lda(Y ~ X1 + X2, data = train_data)
+y_pred_lda <- predict(lda_model, newdata = test_data)$class
+```
+
+QDA
+
+```{r}
+qda_model <- qda(Y ~ X1 + X2, data = train_data)
+y_pred_qda <- predict(qda_model, newdata = test_data)$class
+
+```
+
+Naive Bayes
+
+```{r}
+nb_model <- naiveBayes(Y ~ X1 + X2, data = train_data)
+y_pred_nb <- predict(nb_model, newdata = test_data)
+```
+
+KNN
+
+```{r}
+knn_model <- knn(train = train_data[, c("X1", "X2")], test = test_data[, c("X1", "X2")], cl = train_data$Y, k = 3)
+```
+
+Calculating Performance Metrics
+
+```{r}
+evaluate_model <- function(true_values, predictions) {
+  cm <- table(true_values, predictions)
+  sensitivity <- cm[2, 2] / (cm[2, 2] + cm[2, 1]) # TP / (TP + FN)
+  specificity <- cm[1, 1] / (cm[1, 1] + cm[1, 2]) # TN / (TN + FP)
+  error_rate <- sum(true_values != predictions) / length(true_values) # 
+  return(c(sensitivity, specificity, error_rate))
+}
+
+metrics_log_reg <- evaluate_model(test_data$Y, y_pred_log_reg)
+metrics_lda <- evaluate_model(test_data$Y, y_pred_lda)
+metrics_qda <- evaluate_model(test_data$Y, y_pred_qda)
+metrics_nb <- evaluate_model(test_data$Y, y_pred_nb)
+metrics_knn <- evaluate_model(test_data$Y, knn_model)
+```
+
+Displayed Metrics
+
+```{r}
+metrics <- data.frame(
+  Logistic_Regression = metrics_log_reg,
+  LDA = metrics_lda,
+  QDA = metrics_qda,
+  Naive_Bayes = metrics_nb,
+  KNN = metrics_knn
+)
+colnames(metrics) <- c("Sensitivity", "Specificity", "Error Rate")
+print(metrics)
+
+```
+
+Predictions
+
+```{r}
+new_point <- data.frame(X1 = 0.75, X2 = 0.75)
+log_reg_pred <- predict(log_reg, newdata = new_point, type = "response")
+log_reg_pred <- ifelse(log_reg_pred > 0.5, 1, 0)
+lda_pred <- predict(lda_model, newdata = new_point)$class
+qda_pred <- predict(qda_model, newdata = new_point)$class
+nb_pred <- predict(nb_model, newdata = new_point)
+knn_pred <- knn(train = train_data[, c("X1", "X2")], test = new_point, cl = train_data$Y, k = 3)
+predictions <- data.frame(
+  Logistic_Regression = log_reg_pred,
+  LDA = lda_pred,
+  QDA = qda_pred,
+  Naive_Bayes = nb_pred,
+  KNN = knn_pred
+)
+print(predictions)
+
+```
+
+Describing Q1
+
+Y is the outcome variable. It tells us the classification of what we are trying to predict. Y could represent something like whether a patient has a certain disease like cancer or not. X1 and X2 are predictor variables such as the age of a patient and/or the history of cancer in the family.
+
+Describing Q2
+
+For a new patient with X1 = 0.75 and X2 = 0.75, we would use the models to predict whether the patient has cancer or not. X1 = 0.75 could represent a a patient whose age is higher and X2 = 0.75 could represent a patient who has a strong family history of cancer.
+
+Describing Q3
+
+Based on the model predictions:
+
+If the model predicts Y=1, then I would recommend more tests to be conducted to confirm the diagnosis. If Y = 0, then I would recommend to monitor the patient regularly and do preventitive care.
+
+Ethical Considerations:
+
+-   If the model predicts a false positive then that could lead to unnecessary treatments which in turn would be a waste of money and can cause other issues.
+
+-   Similar to the first point, except that if the model predicts a false negative, then the patient might not recieve the proper treatments required at a soon enough time to prevent it from becoming extremely serious
+
+-   Privacy could also be a concern since cancer diagnosis will involve private health data so it will be important to protect that of the patient
+
+#### What teams need to do
+
+1.  Summarize the models' performance using all of the results from each individual.
+
+2.  Which is the best model to use in this situation?
