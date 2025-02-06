@@ -665,3 +665,137 @@ From an ethical standpoint, it’s important to consider the potential consequen
 1.  Which is the best model to use in this situation?
 
 In this situation, we decided that the best model to use is
+
+
+
+**Will's Section**
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(class)
+suppressPackageStartupMessages(library(tidyverse))
+library(ggplot2)
+library(class)
+```
+
+```{r}
+set.seed(200)
+generate_y <- function(x1,x2) { 
+logit <- x1 -2*x2 -2*x1^2 + x2^2 + 3*x1*x2 +4*x1*x2^2 -3*x1^2*x2
+p <- exp(logit)/(1+exp(logit)) 
+y <- rbinom(1,1,p) 
+}
+```
+
+```{r}
+set.seed(200)
+n = 1000
+X1 <- runif(n,0,1)
+X2 <- runif(n,0,1)
+Y <- rep(0,n) 
+for (i in 1:n) {
+Y[i] <- generate_y(X1[i],X2[i])
+}
+sum(Y)
+```
+
+```{r}
+training <- as.data.frame(cbind(X1,X2,Y))
+ggplot(data=training, aes(x=X1, y=X2, color=Y)) +
+geom_point()
+```
+
+
+
+```{r}
+set.seed(202) 
+generate_y <- function(x1,x2) { 
+logit <- x1 -2*x2 -2*x1^2 + x2^2 + 3*x1*x2 +4*x1*x2^2 -3*x1^2*x2
+p <- exp(logit)/(1+exp(logit))
+y <- rbinom(1,1,p) 
+}
+testing <- as.data.frame(cbind(X1,X2,Y))
+```
+
+
+```{r}
+knn_preds <- knn(train = training[, 1:2], test = testing[, 1:2], cl = training$Y, k = 5)
+
+knn_preds <- as.factor(knn_preds)
+testing$Y <- as.factor(testing$Y)
+
+knn_cm <- confusionMatrix(knn_preds, testing$Y)
+
+knn_sensitivity <- knn_cm$byClass["Sensitivity"]  
+knn_specificity <- knn_cm$byClass["Specificity"]
+knn_misclass <- 1 - knn_cm$overall["Accuracy"]  
+
+cat("k-NN (k=5) Performance Metrics:\n")
+cat("  Sensitivity:", knn_sensitivity, "\n")
+cat("  Specificity:", knn_specificity, "\n")
+cat("  Misclassification Rate:", knn_misclass, "\n")
+```
+
+```{r}
+library(MASS)    
+library(e1071)  
+library(caret)   
+
+model_logit <- glm(Y ~ X1 + X2, family = binomial, data = training)
+logit_preds <- predict(model_logit, newdata = testing, type = "response")
+logit_class <- ifelse(logit_preds > 0.5, 1, 0) 
+lda_model <- lda(Y ~ X1 + X2, data = training)
+lda_preds <- predict(lda_model, newdata = testing)$class
+qda_model <- qda(Y ~ X1 + X2, data = training)
+qda_preds <- predict(qda_model, newdata = testing)$class
+nb_model <- naiveBayes(Y ~ X1 + X2, data = training)
+nb_preds <- predict(nb_model, newdata = testing) 
+calculate_metrics <- function(preds, actual) {
+  cm <- confusionMatrix(factor(preds), factor(actual)) 
+  sensitivity <- cm$byClass["Sensitivity"] 
+  specificity <- cm$byClass["Specificity"] 
+  misclass_rate <- 1 - cm$overall["Accuracy"] 
+  return(list(Sensitivity = sensitivity, Specificity = specificity, Misclassification_Rate = misclass_rate))
+}
+logit_metrics <- calculate_metrics(logit_class, testing$Y)
+lda_metrics <- calculate_metrics(lda_preds, testing$Y)
+qda_metrics <- calculate_metrics(qda_preds, testing$Y)
+nb_metrics <- calculate_metrics(nb_preds, testing$Y)
+
+cat("Performance Metrics:\n\n")
+
+print_metrics <- function(model_name, metrics) {
+  cat(model_name, "\n")
+  cat("  Sensitivity:", metrics$Sensitivity, "\n")
+  cat("  Specificity:", metrics$Specificity, "\n")
+  cat("  Misclassification Rate:", metrics$Misclassification_Rate, "\n\n")
+}
+
+print_metrics("Logistic Regression:", logit_metrics)
+print_metrics("LDA:", lda_metrics)
+print_metrics("QDA:", qda_metrics)
+print_metrics("Naïve Bayes:", nb_metrics)
+```
+```{r}
+new_point <- data.frame(X1 = 0.25, X2 = 0.75)
+logit_pred_prob <- predict(model_logit, newdata = new_point, type = "response") 
+logit_pred_class <- ifelse(logit_pred_prob > 0.5, 1, 0) 
+lda_pred <- predict(lda_model, newdata = new_point)
+lda_pred_class <- lda_pred$class 
+lda_pred_prob <- lda_pred$posterior 
+qda_pred <- predict(qda_model, newdata = new_point)
+qda_pred_class <- qda_pred$class 
+qda_pred_prob <- qda_pred$posterior 
+nb_pred <- predict(nb_model, newdata = new_point, type = "raw") 
+nb_pred_class <- predict(nb_model, newdata = new_point) 
+knn_pred <- knn(train = training[, c("X1", "X2")], 
+                test = new_point, 
+                cl = training$Y, 
+                k = 5)
+cat("Predictions for New Data Point (X1 = 0.25, X2 = 0.75):\n")
+cat("  Logistic Regression -> Class:", logit_pred_class, "| Probability:", logit_pred_prob, "\n")
+cat("  LDA -> Class:", lda_pred_class, "| Posterior:", lda_pred_prob, "\n")
+cat("  QDA -> Class:", qda_pred_class, "| Posterior:", qda_pred_prob, "\n")
+cat("  Naïve Bayes -> Class:", nb_pred_class, "| Posterior:", nb_pred, "\n")
+cat("  k-NN (k=5) -> Class:", knn_pred, "\n")
+```
+
