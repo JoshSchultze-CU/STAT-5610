@@ -798,4 +798,24 @@ cat("  QDA -> Class:", qda_pred_class, "| Posterior:", qda_pred_prob, "\n")
 cat("  Naïve Bayes -> Class:", nb_pred_class, "| Posterior:", nb_pred, "\n")
 cat("  k-NN (k=5) -> Class:", knn_pred, "\n")
 ```
+performance_df <- data.frame(
+  Individual = c("Rishi"),
+  Logistic_Regression_Sensitivity = c(0.3333333),
+  Logistic_Regression_Specificity = c(0.8528785),
+  Logistic_Regression_ErrorRate = c(0.423),
+  LDA_Sensitivity = c(0.6854991),
+  LDA_Specificity = c(0.4818763),
+  LDA_ErrorRate = c(0.410),
+  QDA_Sensitivity = c(0.5762712),
+  QDA_Specificity = c(0.6695096),
+  QDA_ErrorRate = c(0.380),
+  NaiveBayes_Sensitivity = c(0.6403013),
+  NaiveBayes_Specificity = c(0.6055437),
+  NaiveBayes_ErrorRate = c(0.376),
+  KNN_Sensitivity = c(0.6346516),
+  KNN_Specificity = c(0.5309168),
+  KNN_ErrorRate = c(0.414)
+)
+
+print(performance_df)
 
