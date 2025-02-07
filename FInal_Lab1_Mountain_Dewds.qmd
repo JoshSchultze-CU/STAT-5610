@@ -744,6 +744,17 @@ cat("  Naïve Bayes -> Class:", nb_pred_class, "| Posterior:", nb_pred, "\n")
 cat("  k-NN (k=6) -> Class:", knn_pred, "\n")
 ```
 
+## Q1: Describing the Problem  
+In this scenario, Y represents whether a customer will default on a loan. Y = 1 for defaulting, Y = 0 for not defaulting. X1 could be the customer’s credit score, while X2 might represent their number of late payments. By looking at these predictors, we can estimate the likelihood of default and help lenders make bettter loan approval decisions.
+
+## Q2: Predicting for a New Case  
+For a new applicant with X1 = 0.25 and X2 = 0.75, this might indicate a poor to average credit score but also some history of late payments. Using the model, we can predict whether they are likely to default. If the risk is high, the lender might deny the loan. If the risk is low, they may offer them a loan. Every one of my models predicted a Y=1 for the response variable excpet for logistic regression. Because the models that chose Y = 1 have overall a lower error rate than my logistic regression I predict that this person would default on a loan.
+
+## Q3: Decision Making Based on Predictions  
+Because this person is likely to default on the loan I would require either more collateral from them, or reject the loan application. The model’s prediction impacts both the lender and the applicant and could lead to some ethical concerns. A false positive could unfairly deny someone a loan, while a false negative could lead to financial losses. Also, because financial models handle sensitive data, privacy and security must be taken into account.
+ 
+
+
 #### What teams need to do
 
 1.  Summarize the models' performance using all of the results from each individual.
