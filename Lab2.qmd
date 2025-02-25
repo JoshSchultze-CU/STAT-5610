@@ -549,20 +549,13 @@ print(paste("Natural spline model MSE:", cv_natural_mse))
 print(paste("Smoothing spline model MSE:", cv_smooth_mse))
 print(paste("Local regression model MSE:", cv_local_mse))
 
-# Using Step Function
-# Choose the best model (Step function)
+# Choose the best model
 best_model <- step  # Replace with natural if you choose the other
 
-# Choose the significant value (e.g., median horsepower)
+# Choose the significant value 
 x0 <- median(Auto$horsepower)
-
-# Define the bins using the same breaks used when fitting the model
-bins_x0 <- cut(x0, breaks = 4, include.lowest = TRUE, labels = levels(bins))  # Use labels = TRUE
-
-# Make the prediction
+bins_x0 <- cut(x0, breaks = 4, include.lowest = TRUE, labels = levels(bins))  
 predicted_mpg <- predict(best_model, newdata = data.frame(bins = bins_x0))
-
-# Print the predicted mpg at that value
 print(predicted_mpg)
 
 
