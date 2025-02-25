@@ -477,6 +477,103 @@ pink=local regression model
 
 orange=smoothing spline model
 
+# Chase's Section
+
+{r}
+library(ISLR)
+library(gam)
+library(splines)
+library(locfit)
+library(boot)
+library(ggplot2)
+
+data(Auto)
+Auto <- Auto[!duplicated(Auto), ]
+
+# Polynomial Model
+poly <- lm(mpg ~ poly(horsepower, 4), data = Auto)
+
+# Step Function Model
+bins <- cut(Auto$horsepower, breaks = 4)
+step <- lm(mpg ~ bins, data = Auto)
+
+# Cubic Spline Model
+cubic <- lm(mpg ~ bs(horsepower, degree = 3), data = Auto)
+
+# Natural Spline Model
+natural <- lm(mpg ~ ns(horsepower, df = 4), data = Auto)
+
+# Smoothing Spline
+smooth <- smooth.spline(Auto$mpg, Auto$horsepower)
+
+# Local with span parameter
+local <- loess(mpg ~ horsepower, data = Auto, span = 0.75)
+
+# Define cross-validation function for models
+cv_model <- function(model, data, K = 8) {
+  n <- nrow(data)
+  folds <- sample(1:K, n, replace = TRUE)
+  mse <- rep(0, K)
+  
+  for (k in 1:K) {
+    test_indices <- which(folds == k)
+    train_data <- data[-test_indices, ]
+    test_data <- data[test_indices, ]
+    
+    # Fit model on training data
+    if (inherits(model, "loess")) {
+      fit <- loess(mpg ~ horsepower, data = train_data, span = 0.75)
+      pred <- predict(fit, newdata = test_data)
+    } else {
+      fit <- lm(mpg ~ horsepower, data = train_data)
+      pred <- predict(fit, newdata = test_data)
+    }
+    
+    # Calculate MSE for the fold
+    mse[k] <- mean((pred - test_data$mpg)^2)
+  }
+  return(mean(mse))
+}
+
+cv_poly_mse <- cv_model(poly, Auto)
+cv_step_mse <- cv_model(step, Auto)
+cv_cubic_mse <- cv_model(cubic, Auto)
+cv_natural_mse <- cv_model(natural, Auto)
+cv_smooth_mse <- cv_model(smooth, Auto)
+cv_local_mse <- cv_model(local, Auto)
+
+print(paste("Polynomial model MSE:", cv_poly_mse))
+print(paste("Step function model MSE:", cv_step_mse))
+print(paste("Cubic spline model MSE:", cv_cubic_mse))
+print(paste("Natural spline model MSE:", cv_natural_mse))
+print(paste("Smoothing spline model MSE:", cv_smooth_mse))
+print(paste("Local regression model MSE:", cv_local_mse))
+
+# Using Step Function
+# Choose the best model (Step function)
+best_model <- step  # Replace with natural if you choose the other
+
+# Choose the significant value (e.g., median horsepower)
+x0 <- median(Auto$horsepower)
+
+# Define the bins using the same breaks used when fitting the model
+bins_x0 <- cut(x0, breaks = 4, include.lowest = TRUE, labels = levels(bins))  # Use labels = TRUE
+
+# Make the prediction
+predicted_mpg <- predict(best_model, newdata = data.frame(bins = bins_x0))
+
+# Print the predicted mpg at that value
+print(predicted_mpg)
+
+
+When comparing the MSE for all 6 models I found that the Step Function model outperformed the other models slightly. 
+
+My important value was the median of all horsepower values to see how well the model predicts mpg at a typical horsepower level. This can show how well the model captures the performance of the average car, rather than being influenced by extreme values at the high or low ends of horsepower.
+
+This model is telling us that if we model mpg based on horsepower, the median horsepower would imply that the median mpg is about 23.79. This suggests that other factors likely influence fuel efficiency.
+
+The ethical implications of this model would be if we predicted mpg solely based on horsepower, it would overlook factors such as vehicle age, maintenance, and driving behavior, which are also important in determining fuel efficiency. This could lead to inaccurate conclusions that fail to consider the full context of car performance. This could lead to consumers being mislead when trying to find the best car with affordable mpg. 
+
 #### What teams need to do
 
 1.  Create a GAM based on the work of your individual team members.
