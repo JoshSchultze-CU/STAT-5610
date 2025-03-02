@@ -703,6 +703,22 @@ When comparing the MSE for all six models, I found that the Local Regression sli
 #### What teams need to do
 
 1.  Create a GAM based on the work of your individual team members.
+```{r}
+library(ISLR2)
+library(mgcv)
+
+data("Auto")
+
+acceleration_model <- loess(mpg ~ acceleration, data = Auto, span = 0.18)
+weight_model <- loess(mpg ~ weight, data = Auto, span = 0.75)
+displacement_model <- loess(mpg ~ displacement, data = Auto, span = 0.18)
+horsepower_model <- loess(mpg ~ horsepower, data = Auto, span = 0.75)
+
+gam_model <- gam(mpg ~ s(acceleration, bs = "cr") + s(weight, bs = "cr") + s(displacement, bs = "cr") + s(horsepower, bs = "cr"), data = Auto)
+
+summary(gam_model)
+
+```
 2.  Visualize the GAM (R has some good built-in plotting functions, such as plot.gam()).
 3.  Choose a value of X that is important or interesting (explain why) and use that point to make a prediction for Y. Interpret this prediction.
 4.  How does the GAM compare with a linear method (e.g., lasso, ridge, PCR, etc.)?
