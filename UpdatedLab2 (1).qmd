@@ -490,6 +490,33 @@ print(cv_cubic)
 cv_step <- train(mpg ~ cut(acceleration, breaks = 4), data = Auto, method = "lm", trControl = train_control)
 print(cv_step)
 
+#### Part 3: Comparing CV RMSE
+
+```{r}
+cv_poly$results$RMSE
+cv_cubic$results$RMSE
+cv_step$results$RMSE
+```
+
+#### Part 4: Important/Significant value of X
+
+```{r}
+best_model <- cubic_model
+prediction <- predict(best_model, newdata = data.frame(acceleration = 15.5))
+prediction
+
+```
+
+I chose acceleration = 15.5 because I wanted to check the average acceleration which I found to be 15.54133 so I just left it at 15.5.
+
+#### Part 5: What the model means
+
+The model predicts that a car with an acceleration of 15.5 will have about 25.48 mpg. This means that, on average, cars with this level of acceleration tend to have moderate fuel efficiency.
+
+#### Part 6: Ethical Implications
+
+One ethical implication could be the potential for biased predictions if the dataset doesn't represent a diverse range of cars. For example, if the data only has cars from a specific region or the type of car then the model might not be able to predict mpg accurately
+
 
 ```
 # Will Individual
@@ -575,33 +602,6 @@ print(predicted_mpg)
 
 
 When comparing the MSE for all six models, I found that the Local Regression slightly outperformed the others in terms of prediction accuracy. My key metric was the median weight of all vehicles to determine how well the model predicts mpg at a typical vehicle weight. This helps evaluate the model's ability to capture real-world fuel efficiency trends without being skewed by extreme values at the high or low ends of the weight spectrum. According to this model, for a vehicle with the median weight, the expected mpg is approximately 23.75. This suggests that while weight is a significant factor in fuel efficiency, other variables  likely play a role as well. The ethical implications of this model include the risk of oversimplifying fuel efficiency predictions. An ethical concern would be that if consumers rely solely on weight to estimate mpg, they might overlook other important factors such as vehicle design, maintenance, and driving behavior. This could lead to misleading conclusions when choosing a car based only on weight, potentially affecting purchasing decisions and sustainability efforts.
-
-#### Part 3: Comparing CV RMSE
-
-```{r}
-cv_poly$results$RMSE
-cv_cubic$results$RMSE
-cv_step$results$RMSE
-```
-
-#### Part 4: Important/Significant value of X
-
-```{r}
-best_model <- cubic_model
-prediction <- predict(best_model, newdata = data.frame(acceleration = 15.5))
-prediction
-
-```
-
-I chose acceleration = 15.5 because I wanted to check the average acceleration which I found to be 15.54133 so I just left it at 15.5.
-
-#### Part 5: What the model means
-
-The model predicts that a car with an acceleration of 15.5 will have about 25.48 mpg. This means that, on average, cars with this level of acceleration tend to have moderate fuel efficiency.
-
-#### Part 6: Ethical Implications
-
-One ethical implication could be the potential for biased predictions if the dataset doesn't represent a diverse range of cars. For example, if the data only has cars from a specific region or the type of car then the model might not be able to predict mpg accurately
 
 ```{r}
 library(ISLR)
