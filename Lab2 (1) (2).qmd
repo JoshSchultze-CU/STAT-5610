@@ -619,6 +619,87 @@ if (best_model_name == "Step Function") {
 5. This model is telling us that if we model mpg based on horsepower, the median horsepower would imply that the median mpg is about 23.79. This suggests that other factors likely influence fuel efficiency.
 
 6. The ethical implications of this model would be if we predicted mpg solely based on horsepower, it would overlook factors such as vehicle age, maintenance, and driving behavior, which are also important in determining fuel efficiency. This could lead to inaccurate conclusions that fail to consider the full context of car performance. This could lead to consumers being mislead when trying to find the best car with affordable mpg.
+
+# Will's section
+
+```{r}
+library(ISLR2) 
+library(gam) 
+library(splines)
+library(locfit) 
+library(boot) 
+library(ggplot2)
+poly <- lm(mpg ~ poly(weight, 4), data = Auto)
+bins <- cut(Auto$weight, breaks = 4)
+step <- lm(mpg ~ bins, data = Auto)
+cubic <- lm(mpg ~ bs(weight, degree = 3), data = Auto)
+natural <- lm(mpg ~ ns(weight, df = 4), data = Auto)
+smooth <- smooth.spline(Auto$mpg, Auto$weight)
+local <- loess(mpg ~ weight, data = Auto, span = 0.75)
+cv <- function(model_formula, data, K = 8) {
+  n <- nrow(data) 
+  folds <- sample(1:K, n, replace = TRUE) 
+  mse <- rep(0, K)
+  for (k in 1:K) {
+    test_indices <- which(folds == k) 
+    train_data <- data[-test_indices, ] 
+    test_data <- data[test_indices, ]
+    fitted_model <- lm(model_formula, data = train_data)
+    predictions <- predict(fitted_model, newdata = test_data)
+    actual_values <- test_data[, all.vars(model_formula)[1]]  
+    mse[k] <- mean((predictions - actual_values)^2, na.rm = TRUE)
+  }
+  return(mean(mse))
+}
+```
+
+
+```{r}
+Auto$bins <- cut(Auto$weight, breaks = 4)
+poly_formula <- mpg ~ poly(weight, 4)
+step_formula <- mpg ~ bins  # Use the predefined bins
+cubic_formula <- mpg ~ bs(weight, degree = 3)
+natural_formula <- mpg ~ ns(weight, df = 4)
+local_formula <- mpg ~ weight  
+poly_mse <- cv(poly_formula, Auto, K = 8)
+step_mse <- cv(step_formula, Auto, K = 8)
+cubic_mse <- cv(cubic_formula, Auto, K = 8)
+natural_mse <- cv(natural_formula, Auto, K = 8)
+print(paste("Polynomial Model MSE:", round(poly_mse, 4)))
+print(paste("Step Function Model MSE:", round(step_mse, 4)))
+print(paste("Cubic Spline Model MSE:", round(cubic_mse, 4)))
+print(paste("Natural Spline Model MSE:", round(natural_mse, 4)))
+local_predictions <- predict(loess(mpg ~ weight, data = Auto, span = 0.75), newdata = Auto)
+local_mse <- mean((local_predictions - Auto$mpg)^2, na.rm = TRUE)
+print(paste("Local Regression MSE:", round(local_mse, 4)))
+print(paste("Smoothing Spline MSE:", round(smooth_mse, 4)))
+
+```
+```{r}
+step_knots <- levels(cut(Auto$weight, breaks = 4))  # 4 bins → 3 internal knots
+cat("Step Function Knots:", length(step_knots) - 1, "\n") 
+cubic_spline_model <- bs(Auto$weight, degree = 3, knots = quantile(Auto$weight, probs = c(0.25, 0.5, 0.75)))
+cubic_knots <- attr(cubic_spline_model, "knots")
+cat("Cubic Spline Knots:", length(cubic_knots), "\n")
+natural_spline_model <- ns(Auto$weight, df = 4)  # df = 4 → 3 internal knots
+natural_knots <- attr(natural_spline_model, "knots")  
+cat("Natural Spline Knots:", length(natural_knots), "\n")
+smooth_spline_model <- smooth.spline(Auto$weight, Auto$mpg)  # Auto-selects knots
+smooth_knots <- smooth_spline_model$fit$knot  
+cat("Smoothing Spline Knots:", length(smooth_knots), "\n")
+
+```
+```{r}
+median_weight <- median(Auto$weight, na.rm = TRUE)
+predicted_mpg <- predict(cubic, newdata = data.frame(weight = median_weight))
+print(predicted_mpg)
+
+```
+
+
+When comparing the MSE for all six models, I found that the Local Regression slightly outperformed the others in terms of prediction accuracy. My key metric was the median weight of all vehicles to determine how well the model predicts mpg at a typical vehicle weight. This helps evaluate the model's ability to capture real-world fuel efficiency trends without being skewed by extreme values at the high or low ends of the weight spectrum. According to this model, for a vehicle with the median weight, the expected mpg is approximately 23.75. This suggests that while weight is a significant factor in fuel efficiency, other variables  likely play a role as well. The ethical implications of this model include the risk of oversimplifying fuel efficiency predictions. An ethical concern would be that if consumers rely solely on weight to estimate mpg, they might overlook other important factors such as vehicle design, maintenance, and driving behavior. This could lead to misleading conclusions when choosing a car based only on weight, potentially affecting purchasing decisions and sustainability efforts.
+
+
 #### What teams need to do
 
 1.  Create a GAM based on the work of your individual team members.
