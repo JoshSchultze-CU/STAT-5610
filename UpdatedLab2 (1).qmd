@@ -770,7 +770,7 @@ if (best_model_name == "Step Function") {
 
 
 ```
-3. When comparing the MSE for all 6 models I found that the Step Function model outperformed the other models slightly.
+3. When comparing the MSE for all 6 models I found that the Natural Spline model outperformed the other models slightly.
 
 4. My important value was the median of all horsepower values to see how well the model predicts mpg at a typical horsepower level. This can show how well the model captures the performance of the average car, rather than being influenced by extreme values at the high or low ends of horsepower.
 
