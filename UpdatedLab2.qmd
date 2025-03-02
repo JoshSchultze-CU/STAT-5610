@@ -733,7 +733,45 @@ summary(gam_model)
 3.  Choose a value of X that is important or interesting (explain why) and use that point to make a prediction for Y. Interpret this prediction.
 
 4.  How does the GAM compare with a linear method (e.g., lasso, ridge, PCR, etc.)?
+```{r}
+library(ISLR2)
+library(glmnet)
+library(boot)
 
+set.seed(123)
+
+cv_gam_mse <- function(data, K = 8) {
+  n <- nrow(data)
+  folds <- sample(1:K, n, replace = TRUE)
+  mse <- rep(0, K)
+
+  for (k in 1:K) {
+    test_idx <- which(folds == k)
+    train_data <- data[-test_idx, ]
+    test_data <- data[test_idx, ]
+
+    
+    gam_model <- gam(mpg ~ s(acceleration, bs = "cr") + 
+                        s(weight, bs = "cr") + 
+                        s(displacement, bs = "cr") + 
+                        s(horsepower, bs = "cr"), 
+                      data = train_data)
+
+    
+    preds <- predict(gam_model, newdata = test_data)
+    mse[k] <- mean((preds - test_data$mpg)^2)
+  }
+
+  return(mean(mse))
+}
+
+
+gam_mse <- cv_gam_mse(Auto)
+
+print(paste("GAM MSE:", gam_mse))
+print(paste("Ridge Regression MSE:", ridge_mse))
+```
+When comparing our GAM to a linear model, ridge regression, it would appear that our GAM model was better at predicting. It had a lower MSE by about 2. The difference isn't massive but still something to consider. 
 #### Individual contributions to team GAM
 
 Rishi:
@@ -742,7 +780,7 @@ Josh: I created a visual representation of the GAM and researched some ways to u
 
 Will:
 
-Chase:
+Chase: I compared our GAM with a ridge regression model. 
 
 #### **Some intended outcomes from this assignment:**
 
