@@ -682,6 +682,94 @@ predicted_mpg <- predict(best_model, newdata = data.frame(bins = bins_x0))
 
 print(predicted_mpg)
 ```
+
+```{r}
+library(ISLR)
+library(gam)
+library(splines)
+library(locfit)
+library(boot)
+library(ggplot2)
+
+data(Auto)
+Auto <- Auto[!duplicated(Auto), ]
+
+# Cross-validation function for different model types
+cv_model <- function(model_type, data, K = 8, degree = NULL, df = NULL, bins = NULL) {
+  set.seed(123)  # Ensures reproducibility
+  n <- nrow(data)
+  folds <- sample(1:K, n, replace = TRUE)
+  mse <- rep(0, K)
+  
+  for (k in 1:K) {
+    test_indices <- which(folds == k)
+    train_data <- data[-test_indices, ]
+    test_data <- data[test_indices, ]
+    
+    # Fit the model based on type
+    if (model_type == "poly") {
+      fit <- lm(mpg ~ poly(horsepower, degree), data = train_data)
+      pred <- predict(fit, newdata = test_data)
+    } else if (model_type == "step") {
+      train_data$bins <- cut(train_data$horsepower, breaks = bins)
+      test_data$bins <- cut(test_data$horsepower, breaks = bins, labels = levels(train_data$bins))
+      fit <- lm(mpg ~ bins, data = train_data)
+      pred <- predict(fit, newdata = test_data)
+    } else if (model_type == "cubic") {
+      fit <- lm(mpg ~ bs(horsepower, degree = 3), data = train_data)
+      pred <- predict(fit, newdata = test_data)
+    } else if (model_type == "natural") {
+      fit <- lm(mpg ~ ns(horsepower, df = df), data = train_data)
+      pred <- predict(fit, newdata = test_data)
+    } else if (model_type == "smooth") {
+      fit <- smooth.spline(train_data$horsepower, train_data$mpg)
+      pred <- predict(fit, test_data$horsepower)$y
+    } else if (model_type == "loess") {
+      fit <- loess(mpg ~ horsepower, data = train_data, span = 0.75)
+      pred <- predict(fit, newdata = test_data)
+    }
+    
+    # Compute MSE
+    mse[k] <- mean((pred - test_data$mpg)^2, na.rm = TRUE)
+  }
+  
+  return(mean(mse, na.rm = TRUE))
+}
+
+# Run cross-validation for each model
+cv_poly_mse <- cv_model("poly", Auto, degree = 4)
+cv_step_mse <- cv_model("step", Auto, bins = 4)
+cv_cubic_mse <- cv_model("cubic", Auto)
+cv_natural_mse <- cv_model("natural", Auto, df = 4)
+cv_smooth_mse <- cv_model("smooth", Auto)
+cv_local_mse <- cv_model("loess", Auto)
+
+print(paste("Polynomial model MSE:", cv_poly_mse))
+print(paste("Step function model MSE:", cv_step_mse))
+print(paste("Cubic spline model MSE:", cv_cubic_mse))
+print(paste("Natural spline model MSE:", cv_natural_mse))
+print(paste("Smoothing spline model MSE:", cv_smooth_mse))
+print(paste("Local regression model MSE:", cv_local_mse))
+
+# Choosing best model (lowest MSE)
+mse_values <- c(cv_poly_mse, cv_step_mse, cv_cubic_mse, cv_natural_mse, cv_smooth_mse, cv_local_mse)
+model_names <- c("Polynomial", "Step Function", "Cubic Spline", "Natural Spline", "Smoothing Spline", "Local Regression")
+
+best_model_name <- model_names[which.min(mse_values)]
+best_model <- which.min(mse_values)
+
+print(paste("Best model:", best_model_name, "with MSE =", min(mse_values)))
+
+# Predict using Step Function (if chosen)
+if (best_model_name == "Step Function") {
+  x0 <- median(Auto$horsepower)
+  bins_x0 <- cut(x0, breaks = 4, include.lowest = TRUE)
+  predicted_mpg <- predict(lm(mpg ~ bins, data = Auto), newdata = data.frame(bins = bins_x0))
+  print(predicted_mpg)
+}
+
+
+```
 3. When comparing the MSE for all 6 models I found that the Step Function model outperformed the other models slightly.
 
 4. My important value was the median of all horsepower values to see how well the model predicts mpg at a typical horsepower level. This can show how well the model captures the performance of the average car, rather than being influenced by extreme values at the high or low ends of horsepower.
