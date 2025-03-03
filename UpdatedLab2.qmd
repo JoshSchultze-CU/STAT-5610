@@ -774,7 +774,7 @@ print(paste("Ridge Regression MSE:", ridge_mse))
 When comparing our GAM to a linear model, ridge regression, it would appear that our GAM model was better at predicting. It had a lower MSE by about 2. The difference isn't massive but still something to consider. 
 #### Individual contributions to team GAM
 
-Rishi:
+Rishi: I created the GAM and took the individual contributions to fit it
 
 Josh: I created a visual representation of the GAM and researched some ways to use the GAM function with local regression models.
 
