@@ -721,6 +721,24 @@ summary(gam_model)
 ```
 2.  Visualize the GAM (R has some good built-in plotting functions, such as plot.gam()).
 3.  Choose a value of X that is important or interesting (explain why) and use that point to make a prediction for Y. Interpret this prediction.
+
+```{r}
+data("Auto")
+median_acceleration <- median(Auto$acceleration, na.rm = TRUE)
+median_weight <- median(Auto$weight, na.rm = TRUE)
+median_displacement <- median(Auto$displacement, na.rm = TRUE)
+median_horsepower <- median(Auto$horsepower, na.rm = TRUE)
+
+median_data <- data.frame(acceleration = median_acceleration, 
+                       weight = median_weight, 
+                       displacement = median_displacement, 
+                       horsepower = median_horsepower)
+
+predicted_mpg <- predict(gam_model, median_data)
+print(predicted_mpg)
+```
+The output of this gam model was 25.75315, using the median X values of horsepower, displacement, acceleration and weight. The medians of all of these points is of interest for prediction because it shows how the most typical car included in this data set will perform in terms of gas mileage. The gam predicted that a car with all median predictors has a relatively average gas mileage among cars on the road, which is to be expected. This gives us a good number to compare a car's gas mileage in a uniform way.
+
 4.  How does the GAM compare with a linear method (e.g., lasso, ridge, PCR, etc.)?
 
 #### Individual contributions to team GAM
