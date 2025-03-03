@@ -622,6 +622,7 @@ if (best_model_name == "Step Function") {
 
 # Will's section
 
+### 1.
 ```{r}
 library(ISLR2) 
 library(gam) 
@@ -653,17 +654,50 @@ cv <- function(model_formula, data, K = 8) {
 }
 ```
 
+
+### 2.
+```{r}
+library(ISLR2)
+library(splines)
+library(boot)
+set.seed(42)
+cv_error <- function(model_formula, data, K = 10) {
+  cv_glm <- cv.glm(data, glm(model_formula, data = data), K = K)
+  return(as.numeric(cv_glm$delta[1]))
+}
+poly_degrees <- 1:10
+poly_cv_errors <- sapply(poly_degrees, function(d) {
+  suppressWarnings(cv_error(as.formula(paste("mpg ~ poly(weight,", d, ")")), Auto))
+})
+optimal_poly_degree <- poly_degrees[which.min(poly_cv_errors)]
+cat("Optimal polynomial degree:", optimal_poly_degree, "\n")
+ns_df_values <- 3:10
+ns_cv_errors <- sapply(ns_df_values, function(df) {
+  suppressWarnings(cv_error(as.formula(paste("mpg ~ ns(weight, df =", df, ")")), Auto))
+})
+optimal_ns_df <- ns_df_values[which.min(ns_cv_errors)]
+cat("Optimal df for natural splines:", optimal_ns_df, "\n")
+cs_df_values <- 3:10
+cs_cv_errors <- sapply(cs_df_values, function(df) {
+  suppressWarnings(cv_error(as.formula(paste("mpg ~ bs(weight, degree = 3, df =", df, ")")), Auto))
+})
+optimal_cs_df <- cs_df_values[which.min(cs_cv_errors)]
+cat("Optimal df for cubic splines:", optimal_cs_df, "\n")
+```
+
+### 3.
+
 ```{r}
 Auto$bins <- cut(Auto$weight, breaks = 4)
 poly_formula <- mpg ~ poly(weight, 4)
-step_formula <- mpg ~ bins  # Use the predefined bins
+step_formula <- mpg ~ bins 
 cubic_formula <- mpg ~ bs(weight, degree = 3)
 natural_formula <- mpg ~ ns(weight, df = 4)
 local_formula <- mpg ~ weight  
-poly_mse <- cv(poly_formula, Auto, K = 8)
-step_mse <- cv(step_formula, Auto, K = 8)
-cubic_mse <- cv(cubic_formula, Auto, K = 8)
-natural_mse <- cv(natural_formula, Auto, K = 8)
+poly_mse <- suppressWarnings(cv(poly_formula, Auto, K = 8))
+step_mse <- suppressWarnings(cv(step_formula, Auto, K = 8))
+cubic_mse <- suppressWarnings(cv(cubic_formula, Auto, K = 8))
+natural_mse <- suppressWarnings(cv(natural_formula, Auto, K = 8))
 print(paste("Polynomial Model MSE:", round(poly_mse, 4)))
 print(paste("Step Function Model MSE:", round(step_mse, 4)))
 print(paste("Cubic Spline Model MSE:", round(cubic_mse, 4)))
@@ -675,20 +709,9 @@ print(paste("Smoothing Spline MSE:", round(smooth_mse, 4)))
 
 ```
 
-```{r}
-step_knots <- levels(cut(Auto$weight, breaks = 4))  # 4 bins → 3 internal knots
-cat("Step Function Knots:", length(step_knots) - 1, "\n") 
-cubic_spline_model <- bs(Auto$weight, degree = 3, knots = quantile(Auto$weight, probs = c(0.25, 0.5, 0.75)))
-cubic_knots <- attr(cubic_spline_model, "knots")
-cat("Cubic Spline Knots:", length(cubic_knots), "\n")
-natural_spline_model <- ns(Auto$weight, df = 4)  # df = 4 → 3 internal knots
-natural_knots <- attr(natural_spline_model, "knots")  
-cat("Natural Spline Knots:", length(natural_knots), "\n")
-smooth_spline_model <- smooth.spline(Auto$weight, Auto$mpg)  # Auto-selects knots
-smooth_knots <- smooth_spline_model$fit$knot  
-cat("Smoothing Spline Knots:", length(smooth_knots), "\n")
+When comparing the MSE for all six models, I found that the Local Regression outperformed the others in terms of prediction accuracy.
 
-```
+### 4.
 
 ```{r}
 median_weight <- median(Auto$weight, na.rm = TRUE)
@@ -697,9 +720,16 @@ print(predicted_mpg)
 
 ```
 
-When comparing the MSE for all six models, I found that the Local Regression slightly outperformed the others in terms of prediction accuracy. My key metric was the median weight of all vehicles to determine how well the model predicts mpg at a typical vehicle weight. This helps evaluate the model's ability to capture real-world fuel efficiency trends without being skewed by extreme values at the high or low ends of the weight spectrum. According to this model, for a vehicle with the median weight, the expected mpg is approximately 23.75. This suggests that while weight is a significant factor in fuel efficiency, other variables likely play a role as well. The ethical implications of this model include the risk of oversimplifying fuel efficiency predictions. An ethical concern would be that if consumers rely solely on weight to estimate mpg, they might overlook other important factors such as vehicle design, maintenance, and driving behavior. This could lead to misleading conclusions when choosing a car based only on weight, potentially affecting purchasing decisions and sustainability efforts.
 
-#### What teams need to do
+My key metric was the median weight of all vehicles to determine how well the model predicts mpg at a typical vehicle weight. This helps evaluate the model's ability to capture fuel efficiency without being skewed by extreme values at the high or low ends of the weight spectrum. For a vehicle with the median weight, the expected mpg is 23.75.
+
+### 5.
+This prediction of miles per gallon based on median car weight shows us what we expect the typical car to be performing like in the sense of mpg. This gives a good baseline for comparison from other cars because the prediction should generally be in the middle of the distribution.
+
+### 6.
+The ethical implications of this model include the risk of oversimplifying fuel efficiency predictions. An ethical concern would be that if consumers rely solely on weight to estimate mpg, they might overlook other important factors such as vehicle design, maintenance, and driving behavior. This could lead to misleading conclusions when choosing a car based only on weight, potentially affecting purchasing decisions and sustainability efforts.
+
+# What teams need to do
 
 1.  Create a GAM based on the work of your individual team members.
 
@@ -731,6 +761,24 @@ summary(gam_model)
     These 4 plots show the effect of the different predictors on our response of miles per gallon. These plots help visualize the relationship of each individual predictor in our GAM without a 5-dimensional image.
 
 3.  Choose a value of X that is important or interesting (explain why) and use that point to make a prediction for Y. Interpret this prediction.
+
+```{r}
+data("Auto")
+median_acceleration <- median(Auto$acceleration, na.rm = TRUE)
+median_weight <- median(Auto$weight, na.rm = TRUE)
+median_displacement <- median(Auto$displacement, na.rm = TRUE)
+median_horsepower <- median(Auto$horsepower, na.rm = TRUE)
+
+median_data <- data.frame(acceleration = median_acceleration, 
+                       weight = median_weight, 
+                       displacement = median_displacement, 
+                       horsepower = median_horsepower)
+
+predicted_mpg <- predict(gam_model, median_data)
+print(predicted_mpg)
+```
+The output of this gam model was 25.75315, using the median X values of horsepower, displacement, acceleration and weight. The medians of all of these points is of interest for prediction because it shows how the most typical car included in this data set will perform in terms of gas mileage. The gam predicted that a car with all median predictors has a relatively average gas mileage among cars on the road, which is to be expected. This gives us a good number to compare cars' gas mileage in a uniform way.
+
 
 4.  How does the GAM compare with a linear method (e.g., lasso, ridge, PCR, etc.)?
 ```{r}
@@ -778,7 +826,7 @@ Rishi: I created the GAM and took the individual contributions to fit it
 
 Josh: I created a visual representation of the GAM and researched some ways to use the GAM function with local regression models.
 
-Will:
+Will: I chose interesting/important values of X to use in predicting Y
 
 Chase: I compared our GAM with a ridge regression model. 
 
