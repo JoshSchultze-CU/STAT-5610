@@ -178,7 +178,11 @@ summary(bestmod)
 
 \
 
-3.  The SVM is classifying points by using a polynomial kernel of degree 3 to fit the predictor space of X1 and X2 with a polynomial function and marginal error lines (where the support vectors lie). The SVM classifies each point depending on what side of the classification line (this "line" looks like a polynomial of degree 3) each observation lies.
+3.  The SVM is classifying points by using a polynomial kernel of degree 3 to fit the predictor space of X1 and X2 with a polynomial function and marginal error lines (where the support vectors lie). The SVM classifies each point depending on what side of the classification line (this "line" looks like a polynomial of degree 3) each observation lies. See the plot below:
+
+    ```{r}
+    plot(bestmod,training_df)
+    ```
 
 4.  Below I calculated sensitivity, specificity, and overall error rate given the testing data set.
 
