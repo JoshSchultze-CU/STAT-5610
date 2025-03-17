@@ -129,7 +129,7 @@ ggplot(data=training, aes(x=X1, y=X2, color=Y)) +
     WARNING: This code took very long (the tuning portion especially). I noted the selected parameters within the code, so you do not need to run the code again to fit the best model.
 
 ```{r}
-set.seed(314)
+
 training_df<-data.frame(training)
 training_df$Y<-as.factor(training_df$Y)
 head(training_df)
@@ -219,7 +219,7 @@ summary(bestmod)
     data.frame(X1_X2_pred)
     ```
 
-6.  This prediction is 0 and when compared to my prediction is lab 1 for the same point (which was also Y=0). So my prediction is the same using this model:
+6.  This prediction is 0 and when compared to my prediction is lab 1 for the same point (which was also Y=0). So my prediction is the same using this model.
 
     Just to reiterate from lab 1, I chose to interpret the variables as such: Y is classifying a house price as above the median sale price in CO. X1 is average yearly sun exposure to the house (re-scaled to have the range of X1 in the data frame. X2 is the time of mail deliveries to the house (re-scaled to have the range of X2 in the data frame.)
 
@@ -232,8 +232,37 @@ summary(bestmod)
     Below is our team SVM:
 
     ```{r}
+    tune.out <- tune(svm, Y~., data = training_df, kernel = "radial", ranges = list(cost = c(0.1, 1, 10, 100, 1000),gamma = c(0.5,1,2,3,4)))
 
+    summary(tune.out)
+    #cost around 0.1 to 1 should be investigated, gamma around 1-3 should be investigated
+
+    tune.out <- tune(svm, Y~., data = training_df, kernel = "radial", ranges = list(cost = c(0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1),gamma = c(1,2,3)))
+
+    teammod<-tune.out$best.model
+
+    #Best is still cost=0.9,gamma=1
+    tune.out
+
+    predictions<-predict(teammod,testing_df)
+
+    confmatrix<-table(predictions,testing_df$Y)
+
+    sensitivity<-confmatrix[1,1]/sum(confmatrix[,1])
+    specificity<-confmatrix[2,2]/sum(confmatrix[,2])
+    misclassification_rate<- sum(predictions != testing_df$Y)/length(predictions)
+
+    cat("Sensitivity is:","\n")
+    sensitivity
+
+    cat("specificity is:","\n")
+    specificity
+
+    cat("Misclassification Rate is:","\n")
+    misclassification_rate
     ```
+
+    The best model used a cost of 0.9 and gamma 1.
 
 2.  Describe what the SVM is doing, i.e., how it classifies points.
 
@@ -259,7 +288,7 @@ summary(bestmod)
     n = 100
     X1 <- runif(n,0,1)
     X2 <- runif(n,0,1)
-    Y <- rep(0,n) #initializing my Y to be a vector of 0's
+    Y <- rep(0,n)
     for (i in 1:n) {
       Y[i] <- generate_y(X1[i],X2[i])
     }
@@ -269,6 +298,24 @@ summary(bestmod)
     testing<- data.frame(testing)
     testing$Y<- as.factor(testing$Y)
     ## Test set ready
+
+
+
+    ##Creating Model with test set (cost = , gamma =)
+    MD_mod<- svm(Y ~ ., data = testing, kernel = "radial", gamma = 1, cost = 0.9)
+
+    #Predictions and rates
+    predictions<-predict(MD_mod,testing)
+    confmatrix<-table(predictions,testing$Y)
+    sensitivity<-confmatrix[1,1]/sum(confmatrix[,1])
+    specificity<-confmatrix[2,2]/sum(confmatrix[,2])
+    misclassification_rate<- sum(predictions != testing$Y)/length(predictions)
+    cat("Sensitivity is:","\n")
+    sensitivity
+    cat("specificity is:","\n")
+    specificity
+    cat("Misclassification Rate is:","\n")
+    misclassification_rate
 
     ```
 
