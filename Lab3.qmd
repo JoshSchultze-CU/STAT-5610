@@ -225,6 +225,70 @@ summary(bestmod)
 
     The Q2 portion of this project is fitting the data with different SVM models (in my case the polynomial of degree 3), using our best model and predicting on a new house with values of (0.25,0.25). Using the best model, I then predicted that a house with values of (0.25,0.25) will sell below the median sale price of houses in CO (Y=0). So, if we were to give a recommendation to this company based on the SVM model with polynomial degree 3, we would recommend that they not buy the house with values of (0.25,0.25) because it will likely not sell highly. The misclassification rate is still very high, so this model is likely not a great one to base recommendations on.
 
+# Chase's Section 
+```{r}
+library(tidyverse)
+library(e1071)
+
+generate_y <- function(x1, x2) {
+  logit <- x1 - 2*x2 - 2*x1^2 + x2^2 + 3*x1*x2 + 4*x1*x2^2 - 3*x1^2*x2
+  p <- exp(logit) / (1 + exp(logit)) 
+  y <- rbinom(1, 1, p) 
+  return(y)
+}
+
+set.seed(314)
+n_train <- 1000
+X1_train <- runif(n_train, 0, 1)
+X2_train <- runif(n_train, 0, 1)
+Y_train <- sapply(1:n_train, function(i) generate_y(X1_train[i], X2_train[i]))
+training_data <- data.frame(X1 = X1_train, X2 = X2_train, Y = as.factor(Y_train))
+
+set.seed(323)
+n_test <- 100
+X1_test <- runif(n_test, 0, 1)
+X2_test <- runif(n_test, 0, 1)
+Y_test <- sapply(1:n_test, function(i) generate_y(X1_test[i], X2_test[i]))
+test_data <- data.frame(X1 = X1_test, X2 = X2_test, Y = as.factor(Y_test))
+```
+```{r}
+training_data$X1_X2 <- training_data$X1 * training_data$X2
+test_data$X1_X2 <- test_data$X1 * test_data$X2
+
+# Tune SVM with 10-fold cross-validation
+set.seed(314)
+tuned_svm <- tune(svm, Y ~ X1 + X2 + X1_X2, data = training_data,
+                   kernel = "radial", 
+                   ranges = list(cost = 10^seq(-2, 2, by = 1), gamma = 10^seq(-2, 2, by = 1)))
+
+
+best_svm <- tuned_svm$best.model
+```
+3. This SVM model creates a binary class (Y=0 and Y=1) by using X1, X2, and their interaction. We use a non linear kernel of (X1, X2, X1*X2) to then find the optimal hyperplane. The SVM classifies each observation depending on which side of the hyperplane it falls on. 
+
+4. 
+```{r}
+preds <- predict(best_svm, test_data)
+conf_matrix <- table(Predicted = preds, Actual = test_data$Y)
+
+sensitivity <- conf_matrix[2, 2] / sum(conf_matrix[, 2])  # TP / (TP + FN)
+specificity <- conf_matrix[1, 1] / sum(conf_matrix[, 1])  # TN / (TN + FP)
+error_rate <- sum(preds != test_data$Y) / length(test_data$Y)  
+
+cat("Sensitivity:", sensitivity, "\n")
+cat("Specificity:", specificity, "\n")
+cat("Error Rate:", error_rate, "\n")
+```
+5. I used point (0.75,0.25)
+```{r}
+data<-data.frame("X1"=0.75,"X2"=0.25, X1X2 = 0.75 * 0.25)
+X1_X2_pred<-predict(bestmod,newdata=df)
+data.frame(X1_X2_pred)
+```
+6. My prediction of 0 is the same as my previous prediction in Lab 1. In lab 1 I decided to predict whether a student will pass(Y=1) or fail(Y=1) with my X1 being study hours and X2 being previous exam scores. 
+
+The Q2 of this lab would be fitting a SVM model with an interaction between X1 and X2. We then would use our best model to predict if a student will pass or fail with X1 = 0.75 and X2=0.25. Based on my prediction I would highly recommend to this student to increase their hours studied. 
+
 # MOUNTAIN DEWDS TEAM SECTION
 
 1.  Create a new team SVM that predicts the test set better than any individual SVM.
