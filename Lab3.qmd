@@ -289,6 +289,107 @@ data.frame(X1_X2_pred)
 
 The Q2 of this lab would be fitting a SVM model with an interaction between X1 and X2. We then would use our best model to predict if a student will pass or fail with X1 = 0.75 and X2=0.25. Based on my prediction I would highly recommend to this student to increase their hours studied. 
 
+
+# Will's Individual
+
+```{r}
+library(class)
+suppressPackageStartupMessages(library(tidyverse))
+```
+
+
+```{r}
+set.seed(200)
+generate_y <- function(x1,x2) {
+logit <- x1 -2*x2 -2*x1^2 + x2^2 + 3*x1*x2 +4*x1*x2^2 -3*x1^2*x2
+p <- exp(logit)/(1+exp(logit))
+y <- rbinom(1,1,p)
+}
+
+set.seed(314)
+n = 1000
+X1 <- runif(n,0,1)
+X2 <- runif(n,0,1)
+Y <- rep(0,n) 
+for (i in 1:n) {
+Y[i] <- generate_y(X1[i],X2[i])
+}
+sum(Y)
+training <- as.data.frame(cbind(X1,X2,Y))
+```
+
+```{r}
+set.seed(323)
+n = 100
+X1 <- runif(n,0,1)
+X2 <- runif(n,0,1)
+Y <- rep(0,n) 
+for (i in 1:n) {
+  Y[i] <- generate_y(X1[i],X2[i])
+}
+
+sum(Y)
+testing <- as.data.frame(cbind(X1,X2,Y))
+```
+
+## 1. and 2. fitting model and using cv to determine best parameters
+This is for an SVM based on degree 2 polynomials
+```{r}
+training_df <- data.frame(training)
+training_df$Y <- as.factor(training_df$Y)
+head(training_df)
+library(e1071)
+cost_values <- c(0.001, 0.01, 0.1, 1, 1)
+gamma_values <- c(0.1, 1, 10)
+coef0_values <- c(0, 0.25, 0.5, 0.75)
+svm_tuning <- tune(svm, Y ~ ., data = training_df, kernel = "polynomial", degree = 2, 
+                   ranges = list(cost = cost_values, gamma = gamma_values, coef0 = coef0_values))
+summary(svm_tuning)
+cost_range <- seq(0.1, 1.1, 0.025)
+gamma_range <- c(0.05, 1, 1.5)
+svm_tuning <- tune(svm, Y ~ ., data = training_df, kernel = "polynomial", degree = 2, 
+                   ranges = list(cost = cost_range, gamma = gamma_range, coef0 = 0))
+summary(svm_tuning)
+best_svm_model <- svm_tuning$best.model
+summary(best_svm_model)
+
+```
+## 3.
+```{r}
+    plot(best_svm_model,training_df)
+```
+The SVM is performing classification using a polynomial kernel of degree 2, mapping the predictor space of X1 and X2 into a higher-dimensional space. This allows it to fit a nonlinear decision boundary that separates the classes while adding a margin. The support vectors lie along the margin, influencing the placement of the decision boundary. Each observation is classified based on which side of this boundary it falls on—where the boundary itself follows a quadratic curve due to the degree-2 polynomial kernel. 
+
+## 4.
+
+    ```{r}
+    testing_df<-data.frame(testing)
+    testing_df$Y<-as.factor(testing_df$Y)
+    predictions<-predict(best_svm_model,testing_df)
+    confmatrix<-table(predictions,testing_df$Y)
+    sen<-confmatrix[1,1]/sum(confmatrix[,1])
+    spec<-confmatrix[2,2]/sum(confmatrix[,2])
+    mis<- sum(predictions != testing_df$Y)/length(predictions)
+    cat("Sensitivity","\n")
+    sen
+    cat("Specificity","\n")
+    spec
+    cat("Misclassification Rate","\n")
+    mis
+    ```
+
+## 5.
+
+```{r}
+data<-data.frame("X1"=0.25,"X2"=0.75, Y = 0.75 * 0.25)
+Y_pred<-predict(best_svm_model,newdata=data)
+data.frame(Y_pred)
+```
+## 6.
+
+My original model for lab one predicted Y=1 for this point, while this svm model predicted Y=0. My lab 1 Q1 Q3 scenario was predicting whether or not someone would default on their loan given late payment history and credit score. This changes my prediction from lab 1 and now predicts that the individual described by this data point would not default on their loan. Based on this new classification, a company should offer this customer a loan. That being said, the misclassification rate was still 0.4, so this should not be the only way that this a company should decide on offering or declining a loan.
+
+
 # MOUNTAIN DEWDS TEAM SECTION
 
 1.  Create a new team SVM that predicts the test set better than any individual SVM.
