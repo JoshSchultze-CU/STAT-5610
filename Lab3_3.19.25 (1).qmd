@@ -637,5 +637,6 @@ cat("Prediction for (0.75, 0.75): ", prediction, "\n")
     Josh focused on tuning the team SVM. He started with a radial kernel, but it ended up not performing well, so he tried a linear model and tuned cost while also using interactions.
 
     Rishi provided the R code that can easily be run in class to test the performance of our team’s SVM
+    Chase created a plot that compares the individual's SVM to the team's SVM.
 
 #### 
