@@ -552,6 +552,7 @@ cat("Prediction for (0.75, 0.75): ", prediction, "\n")
     The best model used a cost of 1.6. This model is similar to Rishi's model, but considers more predictors that include interactions.
 
 2.  Describe what the SVM is doing, i.e., how it classifies points.
+This model uses a linear SVM while incorporating interaction terms and polynomial transformations to better capture relationships between the predictor variables. The dataset includes the original features, their interaction, squared interaction, and individual squared terms, allowing for more flexibility but keeping the decision boundary linear in the transformed space. To optimize the cost parameter we use grid search with cross validation, starting with a broad range of possible values and refining the search in smaller increments. The best performing model was selected with cost = 0.16 and applied to the test dataset. Predictions are then evaluated using a confusion matrix to assess classification accuracy.
 
 3.  Make a plot that summarizes the performance of the individual SVMs and your team's SVM.
 
