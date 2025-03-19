@@ -639,4 +639,5 @@ cat("Prediction for (0.75, 0.75): ", prediction, "\n")
     Rishi provided the R code that can easily be run in class to test the performance of our team’s SVM
     Chase created a plot that compares the individual's SVM to the team's SVM.
 
+  Will broke down the linear model using interactions and explained how the model classifies points to answer section 2.
 #### 
