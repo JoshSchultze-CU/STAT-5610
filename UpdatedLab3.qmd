@@ -538,6 +538,7 @@ cat("Prediction for (0.75, 0.75): ", prediction, "\n")
     The best model used a cost of 0.9 and gamma 1.
 
 2.  Describe what the SVM is doing, i.e., how it classifies points.
+This model uses a Radial Basis Function SVM, which creates a nonlinear decision boundary by projecting the data into a higher-dimensional space. A grid search with cross validation is performed to optimize cost, which controls the trade-off between margin maximization and classification error, and gamma, which determines the influence of individual data points. After this cross validation, the best performing model is selected and evaluated using a confusion matrix, computing sensitivity, specificity, and misclassification rate to view its accuracy. The results indicate that cost = 0.9 and gamma = 1 provide the best balance for classification.
 
 3.  Make a plot that summarizes the performance of the individual SVMs and your team's SVM.
 
