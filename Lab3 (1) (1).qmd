@@ -532,9 +532,26 @@ cat("Prediction for (0.75, 0.75): ", prediction, "\n")
 
     Below is a plot with the sensitivity, specificity, and overall misclassification rate of each SVM:
 
-    ```{r}
+```{r}
+library(ggplot2)
+library(reshape2)
+svm_results <- data.frame(
+  Model = c("Josh SVM", "Chase's SVM", "Will's SVM", "Rishi's SVM", "Team SVM"),
+  Sensitivity = c(0.44, 0.52, 0.36, 0.7, 0.52),
+  Specificity = c(0.6, 0.7, 0.84, 0.74, 0.64),  
+  Misclassification = c(0.48, 0.39, 0.4, 0.30, 0.42)  
+)
 
-    ```
+svm_results$Model <- factor(svm_results$Model, levels = c("Josh SVM", "Chase's SVM", "Will's SVM", "Rishi's SVM", "Team SVM"))
+svm_results_long <- melt(svm_results, id.vars = "Model")
+ggplot(svm_results_long, aes(x = Model, y = value, fill = variable)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Performance of Individual SVMs vs Team SVM",
+       x = "SVM Model",
+       y = "Performance Metric") +
+  scale_fill_manual(values = c("Sensitivity" = "blue", "Specificity" = "green", "Misclassification" = "red")) +
+  theme_minimal()
+```
 
 4.  Provide R code that can easily be run in class to test the performance of your team's SVM (on a new test set). The code must accept a test dataset of 100 X and y values and output the misclassification rate, sensitivity, and specificity of the SVM. More specifically, write the code so that the only thing that needs to change is the random seed. Add some aspect of your team name to your code so we can distinguish between different teams' functions. Email your .qmd file to the professor. (Upload a pdf to Canvas.) The team with the best classifier on the test set the professor will generate in class (using a different seed) will get 10 bonus points. Second place will get 5 bonus points. Third place will get 3 bonus points. Fourth place will get 2 bonus points. Fifth place will get 1 bonus points. Only teams whose code runs (in class) on the first try will get any bonus points.
 
