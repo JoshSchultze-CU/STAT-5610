@@ -39,7 +39,7 @@ date: 2025-04-18
 
 2.  Brainstorm various research questions. Each individual needs their own sub-research question to answer. Think about how the answers to the sub-research questions could inform the answer to the overall team research question.
 
-    Team research question: Our team research question is "what model can be used to best predict wind in miles per hour at LaGuardia Airport in New York?"
+    Team research question: Our team research question is "what model can be used to best predict wind in miles per hour in New York?"
 
     Individual research questions:
 
@@ -246,7 +246,178 @@ date: 2025-04-18
 
 1.  Answer a team research question.
 
-    Our team research question is "what model can be used to best predict wind in miles per hour at LaGuardia Airport?"
+    Our team research question is "what model can be used to best predict wind in miles per hour in New York?" In order to do this, we fit 4 different models and compared their validation MSE to find which model had the best fit.
+
+    Creating a validation set:
+
+    ```{r}
+
+    #Let's omit data with NAs
+    team_data_frame <- na.omit(team_data_frame)
+
+
+    #Using 15% of the data
+    index<-sample(1:nrow(team_data_frame),ceiling(0.15*nrow(team_data_frame)))
+
+    #creating training and validation data frames...
+    training<-team_data_frame[-index,]
+    validation<-team_data_frame[index,]
+    ```
+
+    Fitting a Neural Network to model the data:
+
+    ```{r}
+    # loading packages
+
+    library(ggplot2)
+    library(glmnet)
+    library(torch)
+    library(luz)
+    library(torchvision)
+    library(torchdatasets)
+    library(zeallot)
+    torch_manual_seed(13)
+
+    set.seed(13)
+
+    train_idx <- sample(1:nrow(team_data_frame), size = floor(0.8 * nrow(team_data_frame)))
+    train_df <- team_data_frame[train_idx, ]
+    test_df <- team_data_frame[-train_idx, ]
+
+    # One-hot encode Month and Day
+    train_onehot <- model.matrix(~ Month + Day - 1, data = train_df)
+    test_onehot <- model.matrix(~ Month + Day - 1, data = test_df)
+
+    # Normalize numeric variables
+    train_numeric <- scale(train_df[, c("Ozone", "Solar.R", "Temp")])
+    test_numeric <- scale(test_df[, c("Ozone", "Solar.R", "Temp")])
+
+    # Combine features
+    train_features <- cbind(train_numeric, train_onehot)
+    test_features <- cbind(test_numeric, test_onehot)
+
+    # Scale targets separately
+    train_target <- scale(train_df$Wind)
+    test_target <- scale(test_df$Wind)
+
+    # Convert to torch tensors
+    train_x <- torch_tensor(as.matrix(train_features), dtype = torch_float())
+    train_y <- torch_tensor(matrix(train_target, ncol = 1), dtype = torch_float())
+
+    test_x <- torch_tensor(as.matrix(test_features), dtype = torch_float())
+    test_y <- torch_tensor(matrix(test_target, ncol = 1), dtype = torch_float())
+
+
+
+
+    # Define the model
+    modelnn <- nn_module(
+      initialize = function() {
+        self$linear1 <- nn_linear(in_features = 38, out_features = 100)
+        self$linear2 <- nn_linear(in_features = 100, out_features = 25)
+        self$linear3 <- nn_linear(in_features = 25, out_features = 1)
+
+
+        
+        self$activation <- nn_relu()
+      },
+      forward = function(x) {
+        x %>%
+          self$linear1() %>%
+          self$activation() %>%
+          
+          self$linear2() %>%
+          self$activation() %>%
+          
+          self$linear3()
+      }  
+    )
+
+    # Setup the model
+    modelnn <- modelnn %>%
+      setup(
+        loss = nn_mse_loss(),  
+        optimizer = optim_adam
+      )
+
+
+    #Tuning the epochs
+
+    #initialize best rate
+    best_rate<-1000
+    for (i in 1:40){
+    # Fit the model
+    system.time(
+      fitted <- modelnn %>%
+        fit(
+          data = list(x = train_x, y = train_y),
+          epochs = i,
+          valid_data = 0.2,
+          dataloader_options = list(batch_size = 16),
+          verbose = TRUE
+        )
+    )
+      
+      predictions <- fitted %>% predict(test_x)
+      as.numeric(predictions)
+    MSE <- mean((as.numeric(predictions) - as.numeric(test_y))^2)
+    if(MSE< best_rate){
+      best_rate<-MSE
+      best_epoch<-i
+    }}
+
+
+    #Finding validation MSE
+
+    # One-hot encode Month and Day
+    val_onehot <- model.matrix(~ Month + Day - 1, data = validation)
+
+    # Normalize numeric variables
+    val_numeric <- scale(validation[, c("Ozone", "Solar.R", "Temp")])
+
+
+    # Combine features
+    val_features <- cbind(val_numeric, val_onehot)
+
+    # Scale targets separately
+    val_target <- scale(validation$Wind)
+
+    # Convert to torch tensors
+    val_x <- torch_tensor(as.matrix(val_features), dtype = torch_float())
+    val_y <- torch_tensor(matrix(val_target, ncol = 1), dtype = torch_float())
+
+    system.time(
+      fitted <- modelnn %>%
+        fit(
+          data = list(x = train_x, y = train_y),
+          epochs = best_epoch,
+          valid_data = 0.2,
+          dataloader_options = list(batch_size = 16),
+          verbose = TRUE
+        )
+    )
+      
+      predictions <- fitted %>% predict(val_x)
+      as.numeric(predictions)
+    MSE <- mean((as.numeric(predictions) - as.numeric(val_y))^2)
+
+    cat("Wind Speed (Scaled) Mean Squared Validation Error is: ", MSE, "\n")
+
+
+
+    #Unscaling the the MSE
+
+
+    # Unscale the predictions and true values
+    unscaled_predictions <- as.numeric(predictions) * attr(train_target, "scaled:scale") + attr(train_target, "scaled:center")
+    unscaled_test_y <- as.numeric(test_y) * attr(train_target, "scaled:scale") + attr(train_target, "scaled:center")
+
+    # Calculate MSE in original scale
+    MSE_original_scale <- mean((unscaled_predictions - unscaled_test_y)^2)
+
+    cat("Mean Squared Error unscaled: ", MSE_original_scale, "\n")
+
+    ```
 
 2.  Explain Q1, Q2, and Q3.
 
@@ -262,9 +433,8 @@ date: 2025-04-18
 
 This data is part of the rdatasets package and is relatively out of date, but serves as an interesting data set to answer both our individual research questions and team research questions.
 
-1.  Comment on any ethical implications of this work.
-
-2.  Create at least one visualization that helps tell the overall narrative of the data.
+3.  Comment on any ethical implications of this work.
+4.  Create at least one visualization that helps tell the overall narrative of the data.
 
 #### Individual contributions
 
