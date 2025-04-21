@@ -246,7 +246,11 @@ date: 2025-04-18
 
     Using this data, it seemed reasonable to think that Wind may be able to be completely modeled by Temperature as a predictor because wind speeds usually depend on temperature and time of year, but temperature and time of year are likely collinear. After considering a correlation plot, a linear model, splines, and a neural net seemed like all possible options for models to predict wind speeds with temperature. Each model was fit and tuned (it turns out that a tuned polynomial regression was equivalent to a linear regression model) and their MSEs were compared. Using the MSE's we saw that the linear regression actually had the lowest mean squared prediction error of about 10.1. This indicates that Wind and Temperature likely have a linear relationship, but the R\^2 value is extremely low (about 1.8) so there could be a better model, though I could not find it.
 
+    Now considering the applications of this modeling, I would recommend to the interested parties in modeling wind speeds solely based off of temperature to investigate different types of models than the ones investigated here. These models had high MSEs and would not reliably predict wind speeds using temperature except to show that wind speeds are higher on average for lower temperatures.
+
 3.  Comment on any ethical implications of this work.
+
+    The ethical implications of this work for the individual assignment are hard to pin down but ethical issues could arise. These include giving wind forecasting to airplanes. If these models were used to give wind forecasts for airplanes, their predictions seem to be fairly unreliable. This could lead to catastrophic events where planes that should not have taken off or taken a different route to their destination failed to do so because their wind predictions were incorrect. Wind speed predictions may also be used for ski areas. If the winds are predicted to stay low, when they in fact are actually high, then a ski lift could run with passengers during very dangerous conditions. Other ethical implications could result from this work, but these are some examples, though not exhaustive.
 
 4.  Highly recommended: Create visualizations of your models or just of the best model.
 
