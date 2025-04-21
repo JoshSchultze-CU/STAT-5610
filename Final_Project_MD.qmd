@@ -86,6 +86,8 @@ date: 2025-04-18
     set.seed(44)
     lmod<-lm(Wind~Temp, data=js_training_data)
 
+    summary(lmod)
+
     wind_pred<-predict(lmod,newdata=js_validation_data)
 
     js_validation_data$LMOD_Predictions<-wind_pred
@@ -231,6 +233,18 @@ date: 2025-04-18
     So out of these 4 methods of fitting wind to temperature, we were not able to reliably find a high accuracy model and surprisingly, the linear model performed the best!
 
 2.  Explain Q1, Q2, and Q3.
+
+    1.  The data were obtained from the New York State Department of Conservation (ozone data) and the National Weather Service (meteorological data). Daily readings of the following air quality values for May 1, 1973 (a Tuesday) to September 30, 1973.
+
+        -   `Ozone`: Mean ozone in parts per billion from 1300 to 1500 hours at Roosevelt Island
+
+        -   `Solar.R`: Solar radiation in Langleys in the frequency band 4000–7700 Angstroms from 0800 to 1200 hours at Central Park
+
+        -   `Wind`: Average wind speed in miles per hour at 0700 and 1000 hours at LaGuardia Airport
+
+        -   `Temp`: Maximum daily temperature in degrees Fahrenheit at LaGuardia Airport.
+
+    Using this data, it seemed reasonable to think that Wind may be able to be completely modeled by Temperature as a predictor because wind speeds usually depend on temperature and time of year, but temperature and time of year are likely collinear. After considering a correlation plot, a linear model, splines, and a neural net seemed like all possible options for models to predict wind speeds with temperature. Each model was fit and tuned (it turns out that a tuned polynomial regression was equivalent to a linear regression model) and their MSEs were compared. Using the MSE's we saw that the linear regression actually had the lowest mean squared prediction error of about 10.1. This indicates that Wind and Temperature likely have a linear relationship, but the R\^2 value is extremely low (about 1.8) so there could be a better model, though I could not find it.
 
 3.  Comment on any ethical implications of this work.
 
@@ -436,13 +450,10 @@ This data is part of the rdatasets package and is relatively out of date, but se
 3.  Comment on any ethical implications of this work.
 4.  Create at least one visualization that helps tell the overall narrative of the data.
 
+See the above plots to see the model predictions with the validation data.
+
 #### Individual contributions
 
 Each individual must comment on their contributions to the team research question. Only individuals who contribute to the team section (and state their contributions) will get points for the team section.
 
-#### **Some intended outcomes from this final project:**
-
--   You will individually get practice fitting statistical learning models
--   You will consolidate your learning of statistical learning methods to answer research questions of interest to you
--   You will gain experience working on a data science project as a team
--   You can post your final project on a personal portfolio (like a GitHub page) to show an example of your work to potential employers
+#### 
