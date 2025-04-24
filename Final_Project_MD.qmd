@@ -47,7 +47,7 @@ date: 2025-04-18
 
     Will:
 
-    Chase:
+    Chase: Which is the strongest predictor of wind speed: temperature, solar radiation, or ozone levels? I will use three models to answer this question, multiple linear regression, lasso, and random forest.
 
     Rishi:
 
@@ -259,6 +259,159 @@ date: 2025-04-18
     ```{r}
     ggplot(data=js_validation_data)+geom_point(aes(x=Temp,y=Wind))+geom_line(aes(x=Temp,y=natural_predictions),color="blue")+geom_line(aes(x=Temp,y=loess_predictions),color="red")+geom_line(aes(x=Temp,y=poly_predictions),color="green")+geom_line(aes(x=Temp,y=natural_predictions),color="yellow")
     ```
+
+## Chase Individual 
+
+```{r}
+set.seed(44)
+
+chase_research_df <- data.frame("Wind" = team_data_frame$Wind,
+                                 "Temp" = team_data_frame$Temp,
+                                 "Solar.R" = team_data_frame$Solar.R,
+                                 "Ozone" = team_data_frame$Ozone)
+
+# Remove rows with missing values
+chase_research_df <- na.omit(chase_research_df)
+
+# Split the data into training (85%) and validation (15%) sets
+index <- sample(1:nrow(chase_research_df), ceiling(0.85 * nrow(chase_research_df)))
+
+training_data <- chase_research_df[index, ]
+validation_data <- chase_research_df[-index, ]
+
+
+```
+
+Multiple Linear Regression
+```{r}
+library(caret)
+library(datasets)
+
+team_data_frame <- na.omit(team_data_frame)
+
+# Split the data into training and testing
+set.seed(44)
+index <- sample(1:nrow(team_data_frame), ceiling(0.85 * nrow(team_data_frame)))
+training_data <- team_data_frame[index, ]
+validation_data <- team_data_frame[-index, ]
+
+# 10 fold CV
+train_control <- trainControl(method = "cv", number = 10)
+
+lm_cv_model <- train(Wind ~ Temp + Solar.R + Ozone, data = training_data,
+                     method = "lm", trControl = train_control)
+
+print(lm_cv_model)
+
+lm_predictions <- predict(lm_cv_model, newdata = validation_data)
+
+validation_data$LM_Predictions <- lm_predictions
+
+lm_coef <- coef(lm_model)[-1]  
+lm_coef_df <- data.frame(Predictor = names(lm_coef), Coefficient = lm_coef)
+
+# Plot 
+ggplot(lm_coef_df, aes(x = Predictor, y = Coefficient)) +
+  geom_bar(stat = "identity", fill = "lightblue") +
+  labs(title = "Multiple Linear Regression Coefficients", x = "Predictor", y = "Coefficient Value") +
+  theme_minimal()
+
+
+# MSPE
+lm_mspe <- mean((validation_data$Wind - lm_predictions)^2)
+cat("Multiple Linear Regression MSPE: ", lm_mspe, "\n")
+
+```
+
+Lasso 
+```{r}
+library(glmnet)
+library(caret)
+
+training_data <- na.omit(training_data)
+validation_data <- na.omit(validation_data)
+
+X_train <- as.matrix(training_data[, c("Temp", "Solar.R", "Ozone")])
+y_train <- training_data$Wind
+X_val <- as.matrix(validation_data[, c("Temp", "Solar.R", "Ozone")])
+y_val <- validation_data$Wind
+
+# Fit Lasso using cv
+lasso_model <- cv.glmnet(X_train, y_train, alpha = 1)
+
+# Best lambda from cross-validation
+best_lambda_lasso <- lasso_model$lambda.min
+cat("Best lambda for Lasso: ", best_lambda_lasso, "\n")
+lasso_predictions <- predict(lasso_model, newx = X_val, s = "lambda.min")
+lasso_predictions <- as.vector(lasso_predictions)
+
+
+validation_data$Lasso_Predictions <- lasso_predictions
+
+# MSPE
+lasso_mspe <- mean((validation_data$Wind - lasso_predictions)^2)
+cat("Lasso Regression MSPE: ", lasso_mspe, "\n")
+
+
+lasso_coef <- coef(lasso_model, s = "lambda.min")[-1]  # Remove intercept
+print(lasso_coef)
+lasso_coef_df <- data.frame(Predictor = c("Temp", "Solar.R", "Ozone"), 
+                            Coefficient = c(-0.04763713, 0, -0.04848467))
+
+# Plot the coefficients 
+ggplot(lasso_coef_df, aes(x = reorder(Predictor, Coefficient), y = Coefficient)) +
+  geom_bar(stat = "identity", fill = ifelse(lasso_coef_df$Coefficient < 0, "red", "blue")) + 
+  coord_flip() +  
+  labs(title = "Lasso Regression Coefficients for Wind Speed Prediction",
+       x = "Predictor", y = "Coefficient Value") +
+  theme_minimal() +
+  theme(axis.text = element_text(size = 12))  
+```
+
+Random Forrests 
+```{r}
+library(randomForest)
+library(caret)
+# 10 fold CV
+train_control <- trainControl(method = "cv", number = 10)
+
+rf_cv_model <- train(Wind ~ Temp + Solar.R + Ozone, data = training_data,
+                     method = "rf", trControl = train_control, tuneLength = 10)
+print(rf_cv_model)
+
+rf_predictions <- predict(rf_cv_model, newdata = validation_data)
+validation_data$RF_Predictions <- rf_predictions
+
+
+rf_importance <- importance(rf_cv_model$finalModel)
+rf_importance_df <- data.frame(Predictor = rownames(rf_importance), Importance = rf_importance[, 1])
+
+# MSPE
+rf_mspe <- mean((validation_data$Wind - rf_predictions)^2)
+cat("Random Forest MSPE: ", rf_mspe, "\n")
+# Plot
+ggplot(rf_importance_df, aes(x = reorder(Predictor, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "purple") +
+  coord_flip() +
+  labs(title = "Random Forest Feature Importance", x = "Predictor", y = "Importance") +
+  theme_minimal()
+```
+Q1, Q2, & Q3
+
+Q1: The data comes from the New York State Department of Conservation and the National Weather Service, with daily measurements from May to September 1973. The variables include Ozone, Solar Radiation (Solar.R), Wind, and Temperature (Temp). We aim to predict Wind Speed based on these environmental factors. Wind speed is crucial for applications such as weather forecasting, aviation, and wind energy
+
+Q2: I used three models: multiple linear regression (MLR), lasso, and random forest, to predict wind speed from temperature, solar radiation, and ozone levels.
+Multiple Linear Regression (MLR): This model showed temperature and ozone levels as significant predictors. The Mean Squared Prediction Error (MSPE) for this model was 8.98.
+Lasso Regression: Lasso showed similar results, confirming temperature and ozone levels as important predictors. The best lambda from cross-validation was 0.267, and the MSPE was 9.06.
+Random Forest: This non-linear model suggested that ozone levels were the most important predictor, followed by temperature, with solar radiation being the least important. The MSPE for random forest was 10.67.
+
+Q3: The MLR and lasso models would suggest that the most important predictor of wind speed would be temperature. As the temperature lowered, wind speeds increased. The ozone levels variable was the second most important, and the MLR and lasso models suggest temperature as the most important predictor of wind speed, with ozone levels also contributing significantly. The lasso model set the coefficient of solar radiation to zero, which shows it has little to no correlation with wind speed. Our random forest models showed Ozone emerged as the most important predictor.
+
+Conclusion: Temperature is the most influential predictor in linear models, while ozone levels are more influential in the random forest model, showing that the choice of model can change the interpretation of which predictor is most important.
+
+Ethical Implications
+
+The ethical implications of this work are mainly centered around the reliability of wind speed predictions. If these models were used in critical applications such as emergency response planning, inaccurate predictions could lead to poor decision-making. If these models were used in critical applications such as weather forecasting in New York, inaccurate predictions could lead to poor decision-making. For example, New York's public safety could be in danger if wind speed forecasts for storm conditions are incorrect, leading to delayed evacuations or poor preparation.
 
 #### What teams need to do
 
