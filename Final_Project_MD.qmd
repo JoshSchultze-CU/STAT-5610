@@ -609,6 +609,158 @@ This data is part of the rdatasets package and is relatively out of date, but se
 
 See the above plots to see the model predictions with the validation data.
 
+
+
+# WILL INDIVIDUAL
+
+## Q1
+
+I would like to see if principle component analysis (PCA) would be the best way to model wind speed, and if so, what would be the optimal amount of principle components for a model. PCA might be useful for this dataset because several of the predictors like Ozone, Solar.R, Temp, and Wind are likely to be correlated leading to multicollinearity in regression models. I will also fit ridge regression and a natural spline to see if there are better ways of modeling wind speed other than PCA.m
+
+```{r}
+    #Loading the dataset
+    library(datasets)
+    head(airquality)
+    #Cleaning the dataset
+    team_data_frame<-airquality
+    team_data_frame$Month<- as.factor(team_data_frame$Month)
+    team_data_frame$Day<- as.factor(team_data_frame$Day)
+```
+
+## Q2
+
+### Ridge Regression
+
+Ridge regression seemed to fit the data very well, and create a fairly accurate model. This model performed even better than my PCA model with 2 components, and gave me an MSE of about 6.94, using a lambda of just under 5. I think this is the best model that I created for this project.
+
+
+```{r}
+suppressPackageStartupMessages(library(glmnet))
+suppressPackageStartupMessages(library(caret))
+suppressPackageStartupMessages(library(datasets))
+data("airquality")
+team_data_frame <- na.omit(airquality)
+team_data_frame$Month <- as.factor(team_data_frame$Month)
+team_data_frame$Day <- as.factor(team_data_frame$Day)
+X <- model.matrix(Wind ~ ., data = team_data_frame)[, -1]
+y <- team_data_frame$Wind
+set.seed(123)
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+X_train <- X[train_index, ]
+y_train <- y[train_index]
+X_test <- X[-train_index, ]
+y_test <- y[-train_index]
+cv_ridge <- cv.glmnet(X_train, y_train, alpha = 0, nfolds = 5)
+best_lambda <- cv_ridge$lambda.min
+cat("Optimal lambda:", best_lambda, "\n")
+predictions <- predict(cv_ridge, s = best_lambda, newx = X_test)
+mse <- mean((predictions - y_test)^2)
+cat("Test MSE:", mse, "\n")
+library(ggplot2)
+df <- data.frame(
+  log_lambda = log(cv_ridge$lambda),
+  mse = cv_ridge$cvm,
+  se = cv_ridge$cvsd
+)
+ggplot(df, aes(x = log_lambda, y = mse)) +
+  geom_line(color = "steelblue") +
+  geom_point(color = "red") +
+  geom_errorbar(aes(ymin = mse - se, ymax = mse + se), width = 0.1) +
+  labs(
+    title = "Ridge Regression: CV MSE vs log(Lambda)",
+    x = "log(Lambda)",
+    y = "Mean Squared Error (CV)"
+  ) +
+  theme_minimal()
+```
+
+
+### Principle Component Analysis (Supervised)
+
+I chose to use principle component analysis to find the optimal number of principle components to use when predicting. Below I have found using 5 fold cross validation, that 2 principle components creates the most accurate model. This gave me an MSE of just over 8.
+
+```{r}
+suppressPackageStartupMessages(library(caret))
+suppressPackageStartupMessages(library(pls))
+suppressPackageStartupMessages(library(datasets))
+data("airquality")
+df <- na.omit(airquality)
+df$Month <- as.factor(df$Month)
+df$Day <- as.factor(df$Day)
+set.seed(123)
+train_index <- createDataPartition(df$Wind, p = 0.8, list = FALSE)
+train_data <- df[train_index, ]
+test_data <- df[-train_index, ]
+ctrl <- trainControl(method = "cv", number = 5)
+set.seed(123)
+suppressWarnings(pca_model <- train(
+  Wind ~ ., 
+  data = train_data,
+  method = "pcr",
+  trControl = ctrl,
+  preProcess = c("center", "scale"),
+  tuneLength = 10  # try up to 10 PCs
+))
+predictions <- predict(pca_model, newdata = test_data)
+mse <- mean((predictions - test_data$Wind)^2)
+cat("Test MSE:", mse, "\n")
+plot(pca_model)
+```
+### Natural Spline
+
+This model uses natural spline transformations on the continuous variables Ozone, Solar.R, and Temp to flexibly capture nonlinear relationships with Wind, while including categorical variables Month and Day as factors. Using 5-fold cross-validation, the best-performing model used 2 degrees of freedom for each spline and achieved a test MSE of approximately 10.97, indicating the average squared prediction error on unseen data.
+
+```{r}
+suppressPackageStartupMessages(library(splines))
+data("airquality")
+df <- na.omit(airquality)
+df$Month <- as.factor(df$Month)
+df$Day <- as.factor(df$Day)
+set.seed(123)
+train_index <- createDataPartition(df$Wind, p = 0.8, list = FALSE)
+train_data <- df[train_index, ]
+test_data <- df[-train_index, ]
+ctrl <- trainControl(method = "cv", number = 5)
+df_grid <- expand.grid(df1 = 2:5, df2 = 2:5, df3 = 2:5)  # flexibility for each spline
+best_mse <- Inf
+best_model <- NULL
+best_params <- NULL
+for (i in 1:nrow(df_grid)) {
+  d1 <- df_grid$df1[i]
+  d2 <- df_grid$df2[i]
+  d3 <- df_grid$df3[i]
+  formula <- as.formula(
+    paste("Wind ~ ns(Ozone,", d1, ") + ns(Solar.R,", d2, ") + ns(Temp,", d3, ") + Month + Day")
+  )
+  set.seed(123)
+ suppressWarnings( model <- train(
+    formula,
+    data = train_data,
+    method = "lm",
+    trControl = ctrl
+  ))
+  pred <- predict(model, newdata = test_data)
+  mse <- mean((pred - test_data$Wind)^2)
+  if (mse < best_mse) {
+    best_mse <- mse
+    best_model <- model
+    best_params <- c(d1 = d1, d2 = d2, d3 = d3)
+  }
+}
+cat("Best degrees of freedom:\n")
+print(best_params)
+cat("Test MSE for best spline model:", best_mse, "\n")
+```
+
+
+## Q3
+
+After completing the Q2 portion of this project, I believe that principle component analysis is not the best way to model wind speed in New York City. Ridge regression was the best model that I created with an MSE of about 6.93 and an optimal lambda of just under 5. While PCA was not the absolute best model I created, the model with 2 principle components was also not the worst that I created. The model with two principle components had an MSE of just over 8, meaning that while it didn't perform the best, it also didn't perform too poorly. The worst model I created was the natural spline model. Using 5 fold cross validation I determined that 2 degrees of freedom created the best model, however it still had an MSE Of 10.97 meaning that it performed worse than the other two models I created.
+
+There could be some ethical implications with this work. While these models are fairly accurate, they are not perfect. Critical jobs rely on wind speed for everyday operations such as airports and construction companies. Under predicting wind could be dangerous in these situations, so we would need to make sure that our models are as accurate as possible.
+
+
+
 #### Individual contributions
 
 Each individual must comment on their contributions to the team research question. Only individuals who contribute to the team section (and state their contributions) will get points for the team section.
