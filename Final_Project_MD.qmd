@@ -45,7 +45,7 @@ date: 2025-04-18
 
     Josh: Can we reliably model wind speeds just using the temperature and what model would be best to do this? It seems that temperature could be a good predictor as temperature and wind speeds may be seasonal and somewhat correlated. For this question I will use generalized linear regression, a smoothing spline, polynomial regression, and local regression (polynomial ended up just acting as linear after tuning)
 
-    Will:
+    Will: How many principle components would create the most efficient and accurate model for predicting wind speeds in NYC?
 
     Chase: Which is the strongest predictor of wind speed: temperature, solar radiation, or ozone levels? I will use three models to answer this question, multiple linear regression, lasso, and random forest.
 
