@@ -227,7 +227,7 @@ The `Group` variable in the data set has values "StatCollab", "SLSp25", "IndoPro
     Below are the results from PCA:
 
     ```{r}
-    pr.out <- prcomp(df[,2:50], scale=TRUE)
+    pr.out <- prcomp(t(df[,2:50]), scale=TRUE)
     names(pr.out)
 
     pr.var<- pr.out$sdev^2
@@ -242,39 +242,35 @@ The `Group` variable in the data set has values "StatCollab", "SLSp25", "IndoPro
     plot(pve, xlab = "Principal Component",ylab = "Proportion of Variance Explained", ylim = c(0, 1),type = "b")
     plot(cumsum(pve), xlab = "Principal Component", ylab ="Cumulative Proportion of Variance Explained",ylim = c(0, 1), type = "b")
 
-    ##Considering only Indonesians
-    pr.out <- prcomp(df[28:93,2:50], scale=TRUE)
-    names(pr.out)
-
-    pr.var<- pr.out$sdev^2
-
-    pve<- pr.var / sum(pr.var)
-    pve
-
-    pr.out$rotation
-
-    par(mfrow = c(1, 2))
-    plot(pve, xlab = "Principal Component",ylab = "Proportion of Variance Explained", ylim = c(0, 1),type = "b")
-    plot(cumsum(pve), xlab = "Principal Component", ylab ="Cumulative Proportion of Variance Explained",ylim = c(0, 1), type = "b")
-
-    ##Considering only CU Boulder
-    pr.out <- prcomp(df[1:27,2:50], scale=TRUE)
-    names(pr.out)
-
-    pr.var<- pr.out$sdev^2
-
-    pve<- pr.var / sum(pr.var)
-    pve
-
-    pr.out$rotation
-
-    par(mfrow = c(1, 2))
-    plot(pve, xlab = "Principal Component",ylab = "Proportion of Variance Explained", ylim = c(0, 1),type = "b")
-    plot(cumsum(pve), xlab = "Principal Component", ylab ="Cumulative Proportion of Variance Explained",ylim = c(0, 1), type = "b")
-
-    pr.out$x
 
     ```
+
+    ```{r}
+    #So we should just using the first two principal components
+
+    pr.out <- prcomp(t(df[,2:50]), scale=TRUE)
+
+
+    pr.var<- pr.out$sdev^2
+
+    pve<- pr.var / sum(pr.var)
+
+    #using coefficents as measures of importance and relation
+    cat("Which attitudes had high positive coefficents in PC1:","\n","\n")
+    which((pr.out$x[,1])>7)
+    cat("Which attitudes had high negative coefficents in PC1:","\n","\n")
+    which(pr.out$x[,1] < -7)
+    cat("\n","\n")
+    cat("Which attitudes had high positive coefficents in PC2:","\n","\n")
+    which((pr.out$x[,2])>3)
+    cat("Which attitudes had high negative coefficents in PC2:","\n","\n")
+    which(pr.out$x[,2] < -3)
+
+    ```
+
+    Using the PCA output for the first two principal components, which explained close to 40% of the variation in the data, we can see that some attitudes are scaled to be used higher in the principal components. Though the interpratability is difficult, we may attempt to interpret this as A6, A12, A16, A21, A25, A23 being related. Also, A1, A3, A4, A5, A9, A11, A15, A18, A19, A20 would be related. Next, A6, A7, A12, A13, A14, A16, A21 would be related. Finally, A2, A4, A5, A9, A10, and A18 would be related.
+
+    Using PCA and clustering, we see that the fav aspect and freq aspect of each attitude are usally grouped together which makes sense. These aspects would probably be interpreted differently by respondents. Beyond that, it was difficult to find groupings that were similar between these methods. More observations may be needed to create reliable groupings.
 
     ## FINISH QUESTION 2 (What is our interpretation)
 
@@ -298,14 +294,7 @@ The `Group` variable in the data set has values "StatCollab", "SLSp25", "IndoPro
 
 ## When done we can write contributions here:
 
-Josh: I created a PCA and compared it's interpretability to the clustering methods.
-
-#### Some intended outcomes from this assignment:
-
-1.  You will individually get practice using K-means and hierarchical clustering
-2.  You will practice using different distance measures and linkages for hierarchical clustering
-3.  You will gain experience interpreting the outputs of clustering algorithms
-4.  You will gain experience collaborating with your teammates on an applied problem
+Josh: I created a PCA and compared it's interpretability to the clustering methods. I also contributed to the interpretation section of question 2.
 
 #### Potentially useful code below
 
