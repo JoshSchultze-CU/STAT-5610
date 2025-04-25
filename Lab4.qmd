@@ -94,7 +94,7 @@ The `Group` variable in the data set has values "StatCollab", "SLSp25", "IndoPro
 
     ```
 
-    Using this output, we can see that the cluster's corresponded fairly well to actual group inclusion. Cluster 2 was the only with perfect classification, but the other clusters only had relatively few classifications each.
+    Using this output, we can see that the cluster's corresponded fairly well to actual group inclusion. Cluster 5 was the only with perfect classification, but the other clusters only had relatively few classifications each.
 
 3.  For the same $K$, cluster the attitudes (cluster the transpose of the $X$ matrix). Interpret your results. Comment on the patterns you see within the clusters of attitudes.
 
@@ -257,10 +257,88 @@ The `Group` variable in the data set has values "StatCollab", "SLSp25", "IndoPro
 #### What teams need to do
 
 1.  Review and combine individual results. Which methods for clustering the data points seemed to correspond best with the pre-established groups? What $K$ gave you the best results? What linkage? What distance metric?
+
+    # NOT SURE HOW TO COMBINE RESULTS. Maybe just print all clustering results for the groups and pick the "best" one?
+
 2.  Compare the results from Principal Component Analysis (PCA) with the results of clustering the attitudes. Which is more interpretable? What is your interpretation?
+
+    The clustering of attitudes seems to be much more interpretable because we can clearly see group assignments of which attitudes are linked together. PCA gives us a combination of attitudes, but it's difficult to identify grouping between all attitudes and where we should define our "cutoffs".
+
+    Below are the results from PCA:
+
+    ```{r}
+    pr.out <- prcomp(df[,2:50], scale=TRUE)
+    names(pr.out)
+
+    pr.var<- pr.out$sdev^2
+
+    pve<- pr.var / sum(pr.var)
+    pve
+
+
+    pr.out$rotation
+
+    par(mfrow = c(1, 2))
+    plot(pve, xlab = "Principal Component",ylab = "Proportion of Variance Explained", ylim = c(0, 1),type = "b")
+    plot(cumsum(pve), xlab = "Principal Component", ylab ="Cumulative Proportion of Variance Explained",ylim = c(0, 1), type = "b")
+
+    ##Considering only Indonesians
+    pr.out <- prcomp(df[28:93,2:50], scale=TRUE)
+    names(pr.out)
+
+    pr.var<- pr.out$sdev^2
+
+    pve<- pr.var / sum(pr.var)
+    pve
+
+    pr.out$rotation
+
+    par(mfrow = c(1, 2))
+    plot(pve, xlab = "Principal Component",ylab = "Proportion of Variance Explained", ylim = c(0, 1),type = "b")
+    plot(cumsum(pve), xlab = "Principal Component", ylab ="Cumulative Proportion of Variance Explained",ylim = c(0, 1), type = "b")
+
+    ##Considering only CU Boulder
+    pr.out <- prcomp(df[1:27,2:50], scale=TRUE)
+    names(pr.out)
+
+    pr.var<- pr.out$sdev^2
+
+    pve<- pr.var / sum(pr.var)
+    pve
+
+    pr.out$rotation
+
+    par(mfrow = c(1, 2))
+    plot(pve, xlab = "Principal Component",ylab = "Proportion of Variance Explained", ylim = c(0, 1),type = "b")
+    plot(cumsum(pve), xlab = "Principal Component", ylab ="Cumulative Proportion of Variance Explained",ylim = c(0, 1), type = "b")
+
+    pr.out$x
+
+    ```
+
+    ## FINISH QUESTION 2 (What is our interpretation)
+
 3.  Create your team's final, best clustering of the data points. How well do the clusters correspond to the four groups?
+
+    Below is the best clustering of the data points for clustering the four groups:
+
+    ```{r}
+
+    ```
+
+    The clustering of the groups seemed to be
+
+    # Finish QUESTION 3
+
 4.  Create your team's final, best clustering of the attitudes. What patterns do you see within the clusters of attitudes?
+
+    ## Finish Question 4. Are there any patterns in the clusters of attitudes?
+
 5.  Write a paragraph about individual contributions. Each individual must comment on their contributions to the lab. Only individuals who contribute to the team section will get points for the team section. An example contribution could be: "I synthesized all of the individual results to find that such and such gave the best and most interpretable results. Then I recommended teammate X use this linkage and that distance measure for our team's cluster." Or, "I did the comparison of PCA with our clustering of the attitudes." Or, "I created our team's best clustering of the data points based on teammate Y's synthesis of our individual results." Or, "I took everyone's code and put it together into the qmd file and knitted it." Or, "I made the plot of our team's best clusters."
+
+## When done we can write contributions here:
+
+Josh: I created a PCA
 
 #### Some intended outcomes from this assignment:
 
