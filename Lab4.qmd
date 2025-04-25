@@ -70,31 +70,12 @@ The `Group` variable in the data set has values "StatCollab", "SLSp25", "IndoPro
     ```{r}
 
     #Outputting each cluster's group name
+    table(km.out$cluster,df$Group)
 
-    #cluster 1
-    cat("Groups in cluster 1", "\n","\n")
-    df[km.out$cluster==1,1]
-
-    #Cluster 2
-    cat("Groups in cluster 2", "\n","\n")
-    df[km.out$cluster==2,1]
-
-    #Clutser 3
-    cat("Groups in cluster 3", "\n","\n")
-    df[km.out$cluster==3,1]
-    #Cluster 4
-    cat("Groups in cluster 4", "\n","\n")
-    df[km.out$cluster==4,1]
-    #Cluster 5
-    cat("Groups in cluster 5", "\n","\n")
-    df[km.out$cluster==5,1]
-    #Cluster 6
-    cat("Groups in cluster 6", "\n","\n")
-    df[km.out$cluster==6,1]
 
     ```
 
-    Using this output, we can see that the cluster's corresponded fairly well to actual group inclusion. Cluster 5 was the only with perfect classification, but the other clusters only had relatively few classifications each.
+    Using this output, we can see that the cluster's corresponded fairly well to actual group inclusion. No cluster had perfect classification but seemed to seperate statcollab and SlSP25 fairly well.
 
 3.  For the same $K$, cluster the attitudes (cluster the transpose of the $X$ matrix). Interpret your results. Comment on the patterns you see within the clusters of attitudes.
 
@@ -107,6 +88,8 @@ The `Group` variable in the data set has values "StatCollab", "SLSp25", "IndoPro
     #dim(df)
     km.out <- kmeans(t(df[,2:50]), 6, nstart = 20)
     df_transpose<-t(df)
+
+
 
     #Outputting each cluster's group name
 
@@ -156,23 +139,10 @@ The `Group` variable in the data set has values "StatCollab", "SLSp25", "IndoPro
     hc.complete <- hclust(dist(df[,2:50],method="euclidean"), method = "complete")
     par(mfrow = c(1, 3))
     plot(hc.complete, main = "Complete Linkage",xlab = "", sub = "", cex = .9)
-
+    cutree(hc.complete, 4)
     cat("4 Clusters when using euclidean distance","\n")
+    table(cutree(hc.complete,4),df$Group)
 
-
-
-    #cluster 1
-    cat("Groups in cluster 1", "\n","\n")
-    df[cutree(hc.complete, 4)==1,1]
-    #cluster 1
-    cat("Groups in cluster 2", "\n","\n")
-    df[cutree(hc.complete, 4)==2,1]
-    #cluster 1
-    cat("Groups in cluster 3", "\n","\n")
-    df[cutree(hc.complete, 4)==3,1]
-    #cluster 1
-    cat("Groups in cluster 4", "\n","\n")
-    df[cutree(hc.complete, 4)==4,1]
 
     #Now using manhattan based distance
     hc.complete <- hclust(dist(df[,2:50],method="manhattan"), method = "complete")
@@ -181,19 +151,9 @@ The `Group` variable in the data set has values "StatCollab", "SLSp25", "IndoPro
     #Output of clusters using manhattan based distance
 
     cat("4 Clusters when using manhattan distance","\n")
+    table(cutree(hc.complete,4),df$Group)
 
-    #cluster 1
-    cat("Groups in cluster 1", "\n","\n")
-    df[cutree(hc.complete, 4)==1,1]
-    #cluster 1
-    cat("Groups in cluster 2", "\n","\n")
-    df[cutree(hc.complete, 4)==2,1]
-    #cluster 1
-    cat("Groups in cluster 3", "\n","\n")
-    df[cutree(hc.complete, 4)==3,1]
-    #cluster 1
-    cat("Groups in cluster 4", "\n","\n")
-    df[cutree(hc.complete, 4)==4,1]
+
 
     ```
 
@@ -201,7 +161,7 @@ The `Group` variable in the data set has values "StatCollab", "SLSp25", "IndoPro
 
 5.  Plot the "best" dendrogram. Interpret your results. To what degree do your $K$ clusters correspond to the four groups?
 
-    The best dedogram seemed to be that resulting from euclidean distance. The clusters correspond to the groups not as well as k means. Below is the plot of this dendogram:
+    The best dendogram seemed to be that resulting from euclidean distance. The clusters correspond to the groups not as well as k means. Below is the plot of this dendogram:
 
     ```{r}
     hc.complete <- hclust(dist(scale(df[,2:50])), method = "complete")
@@ -373,9 +333,36 @@ dist_euclidean <- dist(X, method = "euclidean") #Euclidean distance is the
 
 # Using hclust
 hc.complete <- hclust(dist_spearman, method = "complete")
-# plot(hc.complete, main = "Complete Linkage", sub="Spearman Corr Distance", xlab = "", cex = .9)
+cutree(hc.complete, k=4)
+
+# Kmeans
+km.out <- kmeans(X, k=4, nstart = 20)
+
+# Doing PCA
+pr.out <- prcomp(X,scale=F) #The attitudes are basically already on the same scale, so scaling the attitudes would confuse things, though A1.freq is on a 5-point scale and A1.fav is on a 6-point scale
+
+# Find means of the four groups
+SL.means <- colMeans(dat[dat[,1]=="SLSp25",2:51])
+StatCollab.means <- colMeans(dat[dat[,1]=="StatCollab",2:51])
+IndoProf.means <- colMeans(dat[dat[,1]=="IndoProf24",2:51])
+IndoPost.means <- colMeans(dat[dat[,1]=="IndoPost24",2:51])
+
+# Then transform the group centroids into the Principal Component space
+C.matrix <- rbind(StatCollab.means,SL.means,IndoProf.means,IndoPost.means)
+
+#Transform C.matrix into scores using the rotation matrix of the first two principal components
+W2 <- pr.out$rotation[,1:2]
+Group.scores <- C.matrix %*% W2
+Group.scores <- mutate(as.data.frame(Group.scores),groups=rownames(Group.scores))
+ggplot(data=Group.scores, aes(x=PC1,y=PC2,col=groups)) +
+  geom_point()
 
 # Comparing found clusters with groups
+# What percentage of each cluster is each group?
+table(km.out$cluster,dat$Group) #can transform this into percentages if necessary
+
+# We can do the same with clusters found from hiearchical clustering
+table(cutree(hc.complete,k=4),dat$Group) #These clusters aren't very good.
 
 
 
