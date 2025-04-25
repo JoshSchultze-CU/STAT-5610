@@ -338,7 +338,7 @@ The `Group` variable in the data set has values "StatCollab", "SLSp25", "IndoPro
 
 ## When done we can write contributions here:
 
-Josh: I created a PCA
+Josh: I created a PCA and compared it's interpretability to the clustering methods.
 
 #### Some intended outcomes from this assignment:
 
