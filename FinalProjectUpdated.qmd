@@ -612,6 +612,33 @@ The ethical implications of this work are mainly centered around the reliability
     cat("Mean Squared Error unscaled: ", MSE_original_scale, "\n")
 
     ```
+    GAM
+    ```{r}
+    library(mgcv)
+    
+    # Clean 
+    team_data_frame <- na.omit(team_data_frame)
+    team_data_frame$Month <- factor(team_data_frame$Month)
+    team_data_frame$Day <- factor(team_data_frame$Day)
+    
+    set.seed(13)
+    index <- sample(1:nrow(team_data_frame), size = floor(0.8 * nrow(team_data_frame)))
+    
+    # Create training and test
+    training <- team_data_frame[index, ]
+    validation <- team_data_frame[-index, ]
+    
+    
+    gam_model <- gam(Wind ~ s(Temp, bs = "cr") + s(Solar.R, bs = "cr") + s(Ozone, bs = "cr"), data = training)
+    
+    
+    summary(gam_model)
+    gam_predictions <- predict(gam_model, newdata = validation)
+    
+    # Calculate MSE
+    gam_mse <- mean((validation$Wind - gam_predictions)^2)
+    cat("GAM Model MSE: ", gam_mse, "\n")
+    ```
 
 2.  Explain Q1, Q2, and Q3.
 
