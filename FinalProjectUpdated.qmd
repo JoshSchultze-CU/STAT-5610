@@ -260,7 +260,7 @@ date: 2025-04-18
     ggplot(data=js_validation_data)+geom_point(aes(x=Temp,y=Wind))+geom_line(aes(x=Temp,y=natural_predictions),color="blue")+geom_line(aes(x=Temp,y=loess_predictions),color="red")+geom_line(aes(x=Temp,y=poly_predictions),color="green")+geom_line(aes(x=Temp,y=natural_predictions),color="yellow")
     ```
 
-## Chase Individual
+## CHASE INDIVIDUAL
 
 ```{r}
 set.seed(44)
@@ -308,7 +308,7 @@ lm_predictions <- predict(lm_cv_model, newdata = validation_data)
 
 validation_data$LM_Predictions <- lm_predictions
 
-lm_coef <- coef(lm_model)[-1]  
+lm_coef <- coef(lm_cv_model)
 lm_coef_df <- data.frame(Predictor = names(lm_coef), Coefficient = lm_coef)
 
 # Plot 
@@ -370,7 +370,7 @@ ggplot(lasso_coef_df, aes(x = reorder(Predictor, Coefficient), y = Coefficient))
   theme(axis.text = element_text(size = 12))  
 ```
 
-Random Forrests
+Random Forests
 
 ```{r}
 library(randomForest)
@@ -414,446 +414,7 @@ Ethical Implications
 
 The ethical implications of this work are mainly centered around the reliability of wind speed predictions. If these models were used in critical applications such as emergency response planning, inaccurate predictions could lead to poor decision-making. If these models were used in critical applications such as weather forecasting in New York, inaccurate predictions could lead to poor decision-making. For example, New York's public safety could be in danger if wind speed forecasts for storm conditions are incorrect, leading to delayed evacuations or poor preparation.
 
-#### What teams need to do
-
-1.  Answer a team research question.
-
-    Our team research question is "what model can be used to best predict wind in miles per hour in New York?" In order to do this, we fit 4 different models and compared their validation MSE to find which model had the best fit.
-
-    Random Forest
-
-    ```{r}
-    library(caret)
-    library(randomForest)
-
-    airquality_clean <- na.omit(airquality)
-
-    set.seed(123)
-    control <- trainControl(method = "cv", number = 10)
-
-    model_rf_wind <- train(Wind ~ Solar.R + Temp + Ozone + Month + Day,
-                           data = airquality_clean,
-                           method = "rf",
-                           trControl = control)
-
-    print(model_rf_wind)
-
-    varImp(model_rf_wind)
-
-    ```
-
-    Creating a validation set:
-
-    ```{r}
-
-    #Let's omit data with NAs
-    team_data_frame <- na.omit(team_data_frame)
-
-
-    #Using 15% of the data
-    index<-sample(1:nrow(team_data_frame),ceiling(0.15*nrow(team_data_frame)))
-
-    #creating training and validation data frames...
-    training<-team_data_frame[-index,]
-    validation<-team_data_frame[index,]
-    ```
-
-    Fitting a Neural Network to model the data:
-
-    ```{r}
-    # loading packages
-
-    library(ggplot2)
-    library(glmnet)
-    library(torch)
-    library(luz)
-    library(torchvision)
-    library(torchdatasets)
-    library(zeallot)
-    torch_manual_seed(13)
-
-    set.seed(13)
-
-    train_idx <- sample(1:nrow(team_data_frame), size = floor(0.8 * nrow(team_data_frame)))
-    train_df <- team_data_frame[train_idx, ]
-    test_df <- team_data_frame[-train_idx, ]
-
-    # One-hot encode Month and Day
-    train_onehot <- model.matrix(~ Month + Day - 1, data = train_df)
-    test_onehot <- model.matrix(~ Month + Day - 1, data = test_df)
-
-    # Normalize numeric variables
-    train_numeric <- scale(train_df[, c("Ozone", "Solar.R", "Temp")])
-    test_numeric <- scale(test_df[, c("Ozone", "Solar.R", "Temp")])
-
-    # Combine features
-    train_features <- cbind(train_numeric, train_onehot)
-    test_features <- cbind(test_numeric, test_onehot)
-
-    # Scale targets separately
-    train_target <- scale(train_df$Wind)
-    test_target <- scale(test_df$Wind)
-
-    # Convert to torch tensors
-    train_x <- torch_tensor(as.matrix(train_features), dtype = torch_float())
-    train_y <- torch_tensor(matrix(train_target, ncol = 1), dtype = torch_float())
-
-    test_x <- torch_tensor(as.matrix(test_features), dtype = torch_float())
-    test_y <- torch_tensor(matrix(test_target, ncol = 1), dtype = torch_float())
-
-
-
-
-    # Define the model
-    modelnn <- nn_module(
-      initialize = function() {
-        self$linear1 <- nn_linear(in_features = 38, out_features = 100)
-        self$linear2 <- nn_linear(in_features = 100, out_features = 25)
-        self$linear3 <- nn_linear(in_features = 25, out_features = 1)
-
-
-        
-        self$activation <- nn_relu()
-      },
-      forward = function(x) {
-        x %>%
-          self$linear1() %>%
-          self$activation() %>%
-          
-          self$linear2() %>%
-          self$activation() %>%
-          
-          self$linear3()
-      }  
-    )
-
-    # Setup the model
-    modelnn <- modelnn %>%
-      setup(
-        loss = nn_mse_loss(),  
-        optimizer = optim_adam
-      )
-
-
-    #Tuning the epochs
-
-    #initialize best rate
-    best_rate<-1000
-    for (i in 1:40){
-    # Fit the model
-    system.time(
-      fitted <- modelnn %>%
-        fit(
-          data = list(x = train_x, y = train_y),
-          epochs = i,
-          valid_data = 0.2,
-          dataloader_options = list(batch_size = 16),
-          verbose = TRUE
-        )
-    )
-      
-      predictions <- fitted %>% predict(test_x)
-      as.numeric(predictions)
-    MSE <- mean((as.numeric(predictions) - as.numeric(test_y))^2)
-    if(MSE< best_rate){
-      best_rate<-MSE
-      best_epoch<-i
-    }}
-
-
-    #Finding validation MSE
-
-    # One-hot encode Month and Day
-    val_onehot <- model.matrix(~ Month + Day - 1, data = validation)
-
-    # Normalize numeric variables
-    val_numeric <- scale(validation[, c("Ozone", "Solar.R", "Temp")])
-
-
-    # Combine features
-    val_features <- cbind(val_numeric, val_onehot)
-
-    # Scale targets separately
-    val_target <- scale(validation$Wind)
-
-    # Convert to torch tensors
-    val_x <- torch_tensor(as.matrix(val_features), dtype = torch_float())
-    val_y <- torch_tensor(matrix(val_target, ncol = 1), dtype = torch_float())
-
-    system.time(
-      fitted <- modelnn %>%
-        fit(
-          data = list(x = train_x, y = train_y),
-          epochs = best_epoch,
-          valid_data = 0.2,
-          dataloader_options = list(batch_size = 16),
-          verbose = TRUE
-        )
-    )
-      
-      predictions <- fitted %>% predict(val_x)
-      as.numeric(predictions)
-    MSE <- mean((as.numeric(predictions) - as.numeric(val_y))^2)
-
-    cat("Wind Speed (Scaled) Mean Squared Validation Error is: ", MSE, "\n")
-
-
-
-    #Unscaling the the MSE
-
-
-    # Unscale the predictions and true values
-    unscaled_predictions <- as.numeric(predictions) * attr(train_target, "scaled:scale") + attr(train_target, "scaled:center")
-    unscaled_test_y <- as.numeric(test_y) * attr(train_target, "scaled:scale") + attr(train_target, "scaled:center")
-
-    # Calculate MSE in original scale
-    MSE_original_scale <- mean((unscaled_predictions - unscaled_test_y)^2)
-
-    cat("Mean Squared Error unscaled: ", MSE_original_scale, "\n")
-
-    ```
-    GAM
-    ```{r}
-    library(mgcv)
-    
-    # Clean 
-    team_data_frame <- na.omit(team_data_frame)
-    team_data_frame$Month <- factor(team_data_frame$Month)
-    team_data_frame$Day <- factor(team_data_frame$Day)
-    
-    set.seed(13)
-    index <- sample(1:nrow(team_data_frame), size = floor(0.8 * nrow(team_data_frame)))
-    
-    # Create training and test
-    training <- team_data_frame[index, ]
-    validation <- team_data_frame[-index, ]
-    
-    
-    gam_model <- gam(Wind ~ s(Temp, bs = "cr") + s(Solar.R, bs = "cr") + s(Ozone, bs = "cr"), data = training)
-    
-    
-    summary(gam_model)
-    gam_predictions <- predict(gam_model, newdata = validation)
-    
-    # Calculate MSE
-    gam_mse <- mean((validation$Wind - gam_predictions)^2)
-    cat("GAM Model MSE: ", gam_mse, "\n")
-    ```
-
-2.  Explain Q1, Q2, and Q3.
-
-    The data were obtained from the New York State Department of Conservation (ozone data) and the National Weather Service (meteorological data). Daily readings of the following air quality values for May 1, 1973 (a Tuesday) to September 30, 1973.
-
-    -   `Ozone`: Mean ozone in parts per billion from 1300 to 1500 hours at Roosevelt Island
-
-    -   `Solar.R`: Solar radiation in Langleys in the frequency band 4000–7700 Angstroms from 0800 to 1200 hours at Central Park
-
-    -   `Wind`: Average wind speed in miles per hour at 0700 and 1000 hours at LaGuardia Airport
-
-    -   `Temp`: Maximum daily temperature in degrees Fahrenheit at LaGuardia Airport.
-
-This data is part of the rdatasets package and is relatively out of date, but serves as an interesting data set to answer both our individual research questions and team research questions.
-
-3.  Comment on any ethical implications of this work.
-4.  Create at least one visualization that helps tell the overall narrative of the data.
-
-See the above plots to see the model predictions with the validation data.
-
-# WILL INDIVIDUAL
-
-## Q1
-
-I would like to see if principle component analysis (PCA) would be the best way to model wind speed, and if so, what would be the optimal amount of principle components for a model. PCA might be useful for this dataset because several of the predictors like Ozone, Solar.R, Temp, and Wind are likely to be correlated leading to multicollinearity in regression models. I will also fit ridge regression and a natural spline to see if there are better ways of modeling wind speed other than PCA.m
-
-```{r}
-    #Loading the dataset
-    library(datasets)
-    head(airquality)
-    #Cleaning the dataset
-    team_data_frame<-airquality
-    team_data_frame$Month<- as.factor(team_data_frame$Month)
-    team_data_frame$Day<- as.factor(team_data_frame$Day)
-```
-
-## Q2
-
-### Ridge Regression
-
-Ridge regression seemed to fit the data very well, and create a fairly accurate model. This model performed even better than my PCA model with 2 components, and gave me an MSE of about 6.94, using a lambda of just under 5. I think this is the best model that I created for this project.
-
-
-```{r}
-suppressPackageStartupMessages(library(glmnet))
-suppressPackageStartupMessages(library(caret))
-suppressPackageStartupMessages(library(datasets))
-data("airquality")
-team_data_frame <- na.omit(airquality)
-team_data_frame$Month <- as.factor(team_data_frame$Month)
-team_data_frame$Day <- as.factor(team_data_frame$Day)
-X <- model.matrix(Wind ~ ., data = team_data_frame)[, -1]
-y <- team_data_frame$Wind
-set.seed(123)
-train_index <- createDataPartition(y, p = 0.8, list = FALSE)
-X_train <- X[train_index, ]
-y_train <- y[train_index]
-X_test <- X[-train_index, ]
-y_test <- y[-train_index]
-cv_ridge <- cv.glmnet(X_train, y_train, alpha = 0, nfolds = 5)
-best_lambda <- cv_ridge$lambda.min
-cat("Optimal lambda:", best_lambda, "\n")
-predictions <- predict(cv_ridge, s = best_lambda, newx = X_test)
-mse <- mean((predictions - y_test)^2)
-cat("Test MSE:", mse, "\n")
-library(ggplot2)
-df <- data.frame(
-  log_lambda = log(cv_ridge$lambda),
-  mse = cv_ridge$cvm,
-  se = cv_ridge$cvsd
-)
-ggplot(df, aes(x = log_lambda, y = mse)) +
-  geom_line(color = "steelblue") +
-  geom_point(color = "red") +
-  geom_errorbar(aes(ymin = mse - se, ymax = mse + se), width = 0.1) +
-  labs(
-    title = "Ridge Regression: CV MSE vs log(Lambda)",
-    x = "log(Lambda)",
-    y = "Mean Squared Error (CV)"
-  ) +
-  theme_minimal()
-```
-
-
-### Principle Component Analysis (Supervised)
-
-I chose to use principle component analysis to find the optimal number of principle components to use when predicting. Below I have found using 5 fold cross validation, that 2 principle components creates the most accurate model. This gave me an MSE of just over 8.
-
-```{r}
-suppressPackageStartupMessages(library(caret))
-suppressPackageStartupMessages(library(pls))
-suppressPackageStartupMessages(library(datasets))
-data("airquality")
-df <- na.omit(airquality)
-df$Month <- as.factor(df$Month)
-df$Day <- as.factor(df$Day)
-set.seed(123)
-train_index <- createDataPartition(df$Wind, p = 0.8, list = FALSE)
-train_data <- df[train_index, ]
-test_data <- df[-train_index, ]
-ctrl <- trainControl(method = "cv", number = 5)
-set.seed(123)
-suppressWarnings(pca_model <- train(
-  Wind ~ ., 
-  data = train_data,
-  method = "pcr",
-  trControl = ctrl,
-  preProcess = c("center", "scale"),
-  tuneLength = 10  # try up to 10 PCs
-))
-predictions <- predict(pca_model, newdata = test_data)
-mse <- mean((predictions - test_data$Wind)^2)
-cat("Test MSE:", mse, "\n")
-plot(pca_model)
-```
-### Natural Spline
-
-This model uses natural spline transformations on the continuous variables Ozone, Solar.R, and Temp to flexibly capture nonlinear relationships with Wind, while including categorical variables Month and Day as factors. Using 5-fold cross-validation, the best-performing model used 2 degrees of freedom for each spline and achieved a test MSE of approximately 10.97, indicating the average squared prediction error on unseen data.
-
-```{r}
-suppressPackageStartupMessages(library(splines))
-data("airquality")
-df <- na.omit(airquality)
-df$Month <- as.factor(df$Month)
-df$Day <- as.factor(df$Day)
-set.seed(123)
-train_index <- createDataPartition(df$Wind, p = 0.8, list = FALSE)
-train_data <- df[train_index, ]
-test_data <- df[-train_index, ]
-ctrl <- trainControl(method = "cv", number = 5)
-df_grid <- expand.grid(df1 = 2:5, df2 = 2:5, df3 = 2:5)  # flexibility for each spline
-best_mse <- Inf
-best_model <- NULL
-best_params <- NULL
-for (i in 1:nrow(df_grid)) {
-  d1 <- df_grid$df1[i]
-  d2 <- df_grid$df2[i]
-  d3 <- df_grid$df3[i]
-  formula <- as.formula(
-    paste("Wind ~ ns(Ozone,", d1, ") + ns(Solar.R,", d2, ") + ns(Temp,", d3, ") + Month + Day")
-  )
-  set.seed(123)
- suppressWarnings( model <- train(
-    formula,
-    data = train_data,
-    method = "lm",
-    trControl = ctrl
-  ))
-  pred <- predict(model, newdata = test_data)
-  mse <- mean((pred - test_data$Wind)^2)
-  if (mse < best_mse) {
-    best_mse <- mse
-    best_model <- model
-    best_params <- c(d1 = d1, d2 = d2, d3 = d3)
-  }
-}
-cat("Best degrees of freedom:\n")
-print(best_params)
-cat("Test MSE for best spline model:", best_mse, "\n")
-```
-
-## Will's Model Team Problem 
-
-I fit a BART to try to predict wind speed for the team section of our project. While the MSE was fairly low at a little over 9.5, I believe that other models are better at predicting wind speed. This dataset does not have many observations, or predictors which is generally needed for an accurate BART model. Despite this, it did seem to perform fairly well.
-
-```{r}
-suppressPackageStartupMessages(library(dbarts))
-suppressPackageStartupMessages(library(caret))
-data(airquality)
-team_data_frame <- airquality
-team_data_frame$Month <- as.factor(team_data_frame$Month)
-team_data_frame$Day <- as.factor(team_data_frame$Day)
-team_data_frame <- na.omit(team_data_frame)
-X <- team_data_frame[, c("Ozone", "Solar.R", "Temp", "Month", "Day")] 
-y <- team_data_frame$Wind 
-set.seed(123)
-folds <- createFolds(y, k = 5)
-mse_list <- c()
-for (i in 1:5) {
-  test_idx <- folds[[i]]
-  
-  X_train <- X[-test_idx, ]
-  y_train <- y[-test_idx]
-  X_test <- X[test_idx, ]
-  y_test <- y[test_idx]
-  X_train_matrix <- model.matrix(~ . -1, data = X_train) 
-  X_test_matrix <- model.matrix(~ . -1, data = X_test)
-  bart_fit <- bart(
-    x.train = X_train_matrix,
-    y.train = y_train,
-    x.test = X_test_matrix,
-    keeptrees = FALSE
-  )
-  
-  preds <- bart_fit$yhat.test.mean
-  mse <- mean((preds - y_test)^2)
-  
-  mse_list <- c(mse_list, mse)
-}
-
-# Final average MSE
-final_mse <- mean(mse_list)
-cat("5-Fold CV MSE for BART model predicting Wind:", final_mse, "\n")
-
-```
-
-
-
-## Q3
-
-After completing the Q2 portion of this project, I believe that principle component analysis is not the best way to model wind speed in New York City. Ridge regression was the best model that I created with an MSE of about 6.93 and an optimal lambda of just under 5. While PCA was not the absolute best model I created, the model with 2 principle components was also not the worst that I created. The model with two principle components had an MSE of just over 8, meaning that while it didn't perform the best, it also didn't perform too poorly. The worst model I created was the natural spline model. Using 5 fold cross validation I determined that 2 degrees of freedom created the best model, however it still had an MSE Of 10.97 meaning that it performed worse than the other two models I created.
-
-There could be some ethical implications with this work. While these models are fairly accurate, they are not perfect. Critical jobs rely on wind speed for everyday operations such as airports and construction companies. Under predicting wind could be dangerous in these situations, so we would need to make sure that our models are as accurate as possible.
-
-# Rishi Individual 
+## RISHI INDIVIDUAL
 
 1.  I want to find out if we can predict how much ozone is in the air on a given day just by looking at the weather. I’ll use information like how hot it is, how much sun there is, and how strong the wind is to make these predictions. I will use linear regression, random forest, and GAM to help me do this.
 
@@ -919,8 +480,472 @@ plot(model_gam, pages = 1, se = TRUE)
 
     Ethical Implications: This project uses data dating back to 1973 however we could use the more recent years of weather data rather than all of it. It's also important to make sure that any predictions about air quality are used to protect the public health.
 
+## WILL INDIVIDUAL
+
+## Q1
+
+I would like to see if principle component analysis (PCA) would be the best way to model wind speed, and if so, what would be the optimal amount of principle components for a model. PCA might be useful for this dataset because several of the predictors like Ozone, Solar.R, Temp, and Wind are likely to be correlated leading to multicollinearity in regression models. I will also fit ridge regression and a natural spline to see if there are better ways of modeling wind speed other than PCA.m
+
+```{r}
+    #Loading the dataset
+    library(datasets)
+    head(airquality)
+    #Cleaning the dataset
+    team_data_frame<-airquality
+    team_data_frame$Month<- as.factor(team_data_frame$Month)
+    team_data_frame$Day<- as.factor(team_data_frame$Day)
+```
+
+## Q2
+
+### Ridge Regression
+
+Ridge regression seemed to fit the data very well, and create a fairly accurate model. This model performed even better than my PCA model with 2 components, and gave me an MSE of about 6.94, using a lambda of just under 5. I think this is the best model that I created for this project.
+
+```{r}
+suppressPackageStartupMessages(library(glmnet))
+suppressPackageStartupMessages(library(caret))
+suppressPackageStartupMessages(library(datasets))
+data("airquality")
+team_data_frame <- na.omit(airquality)
+team_data_frame$Month <- as.factor(team_data_frame$Month)
+team_data_frame$Day <- as.factor(team_data_frame$Day)
+X <- model.matrix(Wind ~ ., data = team_data_frame)[, -1]
+y <- team_data_frame$Wind
+set.seed(123)
+train_index <- createDataPartition(y, p = 0.8, list = FALSE)
+X_train <- X[train_index, ]
+y_train <- y[train_index]
+X_test <- X[-train_index, ]
+y_test <- y[-train_index]
+cv_ridge <- cv.glmnet(X_train, y_train, alpha = 0, nfolds = 5)
+best_lambda <- cv_ridge$lambda.min
+cat("Optimal lambda:", best_lambda, "\n")
+predictions <- predict(cv_ridge, s = best_lambda, newx = X_test)
+mse <- mean((predictions - y_test)^2)
+cat("Test MSE:", mse, "\n")
+library(ggplot2)
+df <- data.frame(
+  log_lambda = log(cv_ridge$lambda),
+  mse = cv_ridge$cvm,
+  se = cv_ridge$cvsd
+)
+ggplot(df, aes(x = log_lambda, y = mse)) +
+  geom_line(color = "steelblue") +
+  geom_point(color = "red") +
+  geom_errorbar(aes(ymin = mse - se, ymax = mse + se), width = 0.1) +
+  labs(
+    title = "Ridge Regression: CV MSE vs log(Lambda)",
+    x = "log(Lambda)",
+    y = "Mean Squared Error (CV)"
+  ) +
+  theme_minimal()
+```
+
+### Principle Component Analysis (Supervised)
+
+I chose to use principle component analysis to find the optimal number of principle components to use when predicting. Below I have found using 5 fold cross validation, that 2 principle components creates the most accurate model. This gave me an MSE of just over 8.
+
+```{r}
+suppressPackageStartupMessages(library(caret))
+suppressPackageStartupMessages(library(pls))
+suppressPackageStartupMessages(library(datasets))
+data("airquality")
+df <- na.omit(airquality)
+df$Month <- as.factor(df$Month)
+df$Day <- as.factor(df$Day)
+set.seed(123)
+train_index <- createDataPartition(df$Wind, p = 0.8, list = FALSE)
+train_data <- df[train_index, ]
+test_data <- df[-train_index, ]
+ctrl <- trainControl(method = "cv", number = 5)
+set.seed(123)
+suppressWarnings(pca_model <- train(
+  Wind ~ ., 
+  data = train_data,
+  method = "pcr",
+  trControl = ctrl,
+  preProcess = c("center", "scale"),
+  tuneLength = 10  # try up to 10 PCs
+))
+predictions <- predict(pca_model, newdata = test_data)
+mse <- mean((predictions - test_data$Wind)^2)
+cat("Test MSE:", mse, "\n")
+plot(pca_model)
+```
+
+### Natural Spline
+
+This model uses natural spline transformations on the continuous variables Ozone, Solar.R, and Temp to flexibly capture nonlinear relationships with Wind, while including categorical variables Month and Day as factors. Using 5-fold cross-validation, the best-performing model used 2 degrees of freedom for each spline and achieved a test MSE of approximately 10.97, indicating the average squared prediction error on unseen data.
+
+```{r}
+suppressPackageStartupMessages(library(splines))
+data("airquality")
+df <- na.omit(airquality)
+df$Month <- as.factor(df$Month)
+df$Day <- as.factor(df$Day)
+set.seed(123)
+train_index <- createDataPartition(df$Wind, p = 0.8, list = FALSE)
+train_data <- df[train_index, ]
+test_data <- df[-train_index, ]
+ctrl <- trainControl(method = "cv", number = 5)
+df_grid <- expand.grid(df1 = 2:5, df2 = 2:5, df3 = 2:5)  # flexibility for each spline
+best_mse <- Inf
+best_model <- NULL
+best_params <- NULL
+for (i in 1:nrow(df_grid)) {
+  d1 <- df_grid$df1[i]
+  d2 <- df_grid$df2[i]
+  d3 <- df_grid$df3[i]
+  formula <- as.formula(
+    paste("Wind ~ ns(Ozone,", d1, ") + ns(Solar.R,", d2, ") + ns(Temp,", d3, ") + Month + Day")
+  )
+  set.seed(123)
+ suppressWarnings( model <- train(
+    formula,
+    data = train_data,
+    method = "lm",
+    trControl = ctrl
+  ))
+  pred <- predict(model, newdata = test_data)
+  mse <- mean((pred - test_data$Wind)^2)
+  if (mse < best_mse) {
+    best_mse <- mse
+    best_model <- model
+    best_params <- c(d1 = d1, d2 = d2, d3 = d3)
+  }
+}
+cat("Best degrees of freedom:\n")
+print(best_params)
+cat("Test MSE for best spline model:", best_mse, "\n")
+```
+
+## Q3
+
+After completing the Q2 portion of this project, I believe that principle component analysis is not the best way to model wind speed in New York City. Ridge regression was the best model that I created with an MSE of about 6.93 and an optimal lambda of just under 5. While PCA was not the absolute best model I created, the model with 2 principle components was also not the worst that I created. The model with two principle components had an MSE of just over 8, meaning that while it didn't perform the best, it also didn't perform too poorly. The worst model I created was the natural spline model. Using 5 fold cross validation I determined that 2 degrees of freedom created the best model, however it still had an MSE Of 10.97 meaning that it performed worse than the other two models I created.
+
+There could be some ethical implications with this work. While these models are fairly accurate, they are not perfect. Critical jobs rely on wind speed for everyday operations such as airports and construction companies. Under predicting wind could be dangerous in these situations, so we would need to make sure that our models are as accurate as possible.
+
+#### What teams need to do
+
+1.  Answer a team research question.
+
+    Our team research question is "what model can be used to best predict wind in miles per hour in New York?" In order to do this, we fit 4 different models and compared their validation MSE to find which model had the best fit. Creating validation set:
+
+    ```{r}
+    set.seed(14)
+    #Let's omit data with NAs
+    team_data_frame <- na.omit(team_data_frame)
+
+
+    #Using 15% of the data
+    index<-sample(1:nrow(team_data_frame),ceiling(0.15*nrow(team_data_frame)))
+
+    #creating training and validation data frames...
+    training<-team_data_frame[-index,]
+    validation<-team_data_frame[index,]
+    ```
+
+    Random Forest
+
+    ```{r}
+    library(caret)
+    library(randomForest)
+
+    airquality_clean <- na.omit(training)
+
+    set.seed(123)
+    control <- trainControl(method = "cv", number = 10)
+
+    model_rf_wind <- train(Wind ~ Solar.R + Temp + Ozone + Month + Day,
+                           data = airquality_clean,
+                           method = "rf",
+                           trControl = control)
+
+    print(model_rf_wind)
+
+    varImp(model_rf_wind)
+
+
+    predict(model_rf_wind,newdata=validation)
+
+    MSE <- mean((as.numeric(predictions) - as.numeric(validation$Wind))^2)
+
+    cat("Random Forests Validation MSE is:", MSE, "\n")
+
+
+    ```
+
+    ## Will's Model Team Problem
+
+I fit a BART to try to predict wind speed for the team section of our project. While the MSE was fairly low at a little over 9.5, I believe that other models are better at predicting wind speed. This dataset does not have many observations, or predictors which is generally needed for an accurate BART model. Despite this, it did seem to perform fairly well.
+
+```{r}
+suppressPackageStartupMessages(library(dbarts))
+suppressPackageStartupMessages(library(caret))
+data(airquality)
+team_data_frame <- airquality
+team_data_frame$Month <- as.factor(team_data_frame$Month)
+team_data_frame$Day <- as.factor(team_data_frame$Day)
+team_data_frame <- na.omit(team_data_frame)
+X <- team_data_frame[, c("Ozone", "Solar.R", "Temp", "Month", "Day")] 
+y <- team_data_frame$Wind 
+set.seed(123)
+folds <- createFolds(y, k = 5)
+mse_list <- c()
+for (i in 1:5) {
+  test_idx <- folds[[i]]
+  
+  X_train <- X[-test_idx, ]
+  y_train <- y[-test_idx]
+  X_test <- X[test_idx, ]
+  y_test <- y[test_idx]
+  X_train_matrix <- model.matrix(~ . -1, data = X_train) 
+  X_test_matrix <- model.matrix(~ . -1, data = X_test)
+  bart_fit <- bart(
+    x.train = X_train_matrix,
+    y.train = y_train,
+    x.test = X_test_matrix,
+    keeptrees = FALSE
+  )
+  
+  preds <- bart_fit$yhat.test.mean
+  mse <- mean((preds - y_test)^2)
+  
+  mse_list <- c(mse_list, mse)
+}
+
+# Final average MSE
+final_mse <- mean(mse_list)
+cat("5-Fold CV MSE for BART model predicting Wind:", final_mse, "\n")
+
+```
+
+Fitting a Neural Network to model the data:
+
+```{r}
+# loading packages
+
+library(ggplot2)
+library(glmnet)
+library(torch)
+library(luz)
+library(torchvision)
+library(torchdatasets)
+library(zeallot)
+torch_manual_seed(13)
+
+set.seed(13)
+
+train_idx <- sample(1:nrow(team_data_frame), size = floor(0.8 * nrow(team_data_frame)))
+train_df <- team_data_frame[train_idx, ]
+test_df <- team_data_frame[-train_idx, ]
+
+# One-hot encode Month and Day
+train_onehot <- model.matrix(~ Month + Day - 1, data = train_df)
+test_onehot <- model.matrix(~ Month + Day - 1, data = test_df)
+
+# Normalize numeric variables
+train_numeric <- scale(train_df[, c("Ozone", "Solar.R", "Temp")])
+test_numeric <- scale(test_df[, c("Ozone", "Solar.R", "Temp")])
+
+# Combine features
+train_features <- cbind(train_numeric, train_onehot)
+test_features <- cbind(test_numeric, test_onehot)
+
+# Scale targets separately
+train_target <- scale(train_df$Wind)
+test_target <- scale(test_df$Wind)
+
+# Convert to torch tensors
+train_x <- torch_tensor(as.matrix(train_features), dtype = torch_float())
+train_y <- torch_tensor(matrix(train_target, ncol = 1), dtype = torch_float())
+
+test_x <- torch_tensor(as.matrix(test_features), dtype = torch_float())
+test_y <- torch_tensor(matrix(test_target, ncol = 1), dtype = torch_float())
+
+
+
+
+# Define the model
+modelnn <- nn_module(
+  initialize = function() {
+    self$linear1 <- nn_linear(in_features = 38, out_features = 100)
+    self$linear2 <- nn_linear(in_features = 100, out_features = 25)
+    self$linear3 <- nn_linear(in_features = 25, out_features = 1)
+
+
+    
+    self$activation <- nn_relu()
+  },
+  forward = function(x) {
+    x %>%
+      self$linear1() %>%
+      self$activation() %>%
+      
+      self$linear2() %>%
+      self$activation() %>%
+      
+      self$linear3()
+  }  
+)
+
+# Setup the model
+modelnn <- modelnn %>%
+  setup(
+    loss = nn_mse_loss(),  
+    optimizer = optim_adam
+  )
+
+
+#Tuning the epochs
+
+#initialize best rate
+best_rate<-1000
+for (i in 1:40){
+# Fit the model
+system.time(
+  fitted <- modelnn %>%
+    fit(
+      data = list(x = train_x, y = train_y),
+      epochs = i,
+      valid_data = 0.2,
+      dataloader_options = list(batch_size = 16),
+      verbose = TRUE
+    )
+)
+  
+  predictions <- fitted %>% predict(test_x)
+  as.numeric(predictions)
+MSE <- mean((as.numeric(predictions) - as.numeric(test_y))^2)
+if(MSE< best_rate){
+  best_rate<-MSE
+  best_epoch<-i
+}}
+
+
+#Finding validation MSE
+
+# One-hot encode Month and Day
+val_onehot <- model.matrix(~ Month + Day - 1, data = validation)
+
+# Normalize numeric variables
+val_numeric <- scale(validation[, c("Ozone", "Solar.R", "Temp")])
+
+
+# Combine features
+val_features <- cbind(val_numeric, val_onehot)
+
+# Scale targets separately
+val_target <- scale(validation$Wind)
+
+# Convert to torch tensors
+val_x <- torch_tensor(as.matrix(val_features), dtype = torch_float())
+val_y <- torch_tensor(matrix(val_target, ncol = 1), dtype = torch_float())
+
+system.time(
+  fitted <- modelnn %>%
+    fit(
+      data = list(x = train_x, y = train_y),
+      epochs = best_epoch,
+      valid_data = 0.2,
+      dataloader_options = list(batch_size = 16),
+      verbose = TRUE
+    )
+)
+  
+  predictions <- fitted %>% predict(val_x)
+  as.numeric(predictions)
+MSE <- mean((as.numeric(predictions) - as.numeric(val_y))^2)
+
+cat("Wind Speed (Scaled) Mean Squared Validation Error is: ", MSE, "\n")
+
+
+
+#Unscaling the the MSE
+
+
+# Unscale the predictions and true values
+unscaled_predictions <- as.numeric(predictions) * attr(train_target, "scaled:scale") + attr(train_target, "scaled:center")
+unscaled_test_y <- as.numeric(test_y) * attr(train_target, "scaled:scale") + attr(train_target, "scaled:center")
+
+# Calculate MSE in original scale
+MSE_original_scale <- mean((unscaled_predictions - unscaled_test_y)^2)
+
+cat("Mean Squared Error unscaled: ", MSE_original_scale, "\n")
+```
+
+GAM
+
+```{r}
+library(mgcv)
+
+# Clean 
+team_data_frame <- na.omit(team_data_frame)
+team_data_frame$Month <- factor(team_data_frame$Month)
+team_data_frame$Day <- factor(team_data_frame$Day)
+
+
+
+gam_model <- gam(Wind ~ s(Temp, bs = "cr") + s(Solar.R, bs = "cr") + s(Ozone, bs = "cr"), data = training)
+
+
+summary(gam_model)
+gam_predictions <- predict(gam_model, newdata = validation)
+
+# Calculate MSE
+gam_mse <- mean((validation$Wind - gam_predictions)^2)
+cat("GAM Model MSE: ", gam_mse, "\n")
+```
+
+2.  Explain Q1, Q2, and Q3.
+
+    The data were obtained from the New York State Department of Conservation (ozone data) and the National Weather Service (meteorological data). Daily readings of the following air quality values for May 1, 1973 (a Tuesday) to September 30, 1973.
+
+    -   `Ozone`: Mean ozone in parts per billion from 1300 to 1500 hours at Roosevelt Island
+
+    -   `Solar.R`: Solar radiation in Langleys in the frequency band 4000–7700 Angstroms from 0800 to 1200 hours at Central Park
+
+    -   `Wind`: Average wind speed in miles per hour at 0700 and 1000 hours at LaGuardia Airport
+
+    -   `Temp`: Maximum daily temperature in degrees Fahrenheit at LaGuardia Airport.
+
+This data is part of the rdatasets package and is relatively out of date, but serves as an interesting data set to answer both our individual research questions and team research questions. We wanted to use this data set as a way to investigate different models learned throughout the semester. The four models we investigated for the team question were a neural network, BART, random forests, and a GAM. We used these models because they seemed to account for the non linearity of the data and could also use some underlying patterns that were not as clear to us initially. We created a validation test data set to measure MSE and use this as a metric of the best model in terms of prediction. After tuning the models, we found that the GAM had the lowest validation MSE and thus seemed to be the best model.
+
+So, if we were to recommend a model to be used, we would recommend the GAM model presented in this project to be used for predictions. In addition, we would not recommend using a neural network as it had the worst MSE likely due to have a low amount of training observations. Other models could be investigated further, but for the purposes of this investigation, a GAM should be used to best predict the data.
+
+3.  Comment on any ethical implications of this work.
+
+    We analyzed the airquality dataset with somewhat outdated measurements. In addition, these measurements were made within a year and thus could not be very reflective of true patterns within these variables. This means that even though our GAM model predicts wind speed relatively well, we are not sure if this would translate to other data sets with the same variables. Therefore, if any of these models were sued to predict wind speeds to decide whether planes should take off at the LaGuardia airport, this could result in dangerous false predictions. If this happened, there could be catastrophic consequences in terms of plane crashes, delays to life saving treatments, etc. Other ethical implications include misuse of these models in other climate sciences. Climate scientists should not sue these models as sole predictors of wind speed as there may be may other underlying factors that impact wind speed. This could lead to woefully characterized statistics and papers in the future that could impact environmental safety in the years to come.
+
+4.  Create at least one visualization that helps tell the overall narrative of the data.
+
+    Below is a visualization of the MSEs of each model:
+
+    ```{r}
+    names<-c("Neural Network", "GAM", "Random Forests", "BART")
+    mses<-c(18.34,4.48,9.54,8.30)
+    mse_df<-data.frame("Model"=names,"MSE"=mses)
+    ggplot(mse_df, aes(x = Model, y = MSE, fill = Model)) +
+      geom_bar(stat = "identity") +
+      labs(title = "Model Comparison by MSE",
+           x = "Model",
+           y = "Mean Squared Error") +
+      theme_minimal() +
+      theme(legend.position = "none")
+
+    ```
+
+See the above plots to see the model predictions with the validation data. Using MSE as our decision rule, we can see that a GAM would be the best model to predict this data. It's also helpful that a GAM is somewhat easy to interpret when compared to the other models so this is a plus.
+
 #### Individual contributions
 
 Each individual must comment on their contributions to the team research question. Only individuals who contribute to the team section (and state their contributions) will get points for the team section.
 
-#### 
+Josh: I created and trained the neural network model for the team research question. A neural network seemed like it could be useful because it may find underlying patterns in the daily data, though we did not have a lot of training observations so it's reliability was not going to be likely very high. I also helped in creating the MSE plot.
+
+Rishi:
+
+Chase:
+
+Will:
