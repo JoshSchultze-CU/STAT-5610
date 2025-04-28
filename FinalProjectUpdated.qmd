@@ -939,6 +939,6 @@ Josh: I created and trained the neural network model for the team research quest
 
 Rishi:
 
-Chase:
+Chase: I created the gam model to help answer the team research question. The model ended seeming to be helpful when trying to predict wind speed in New York. 
 
 Will:
