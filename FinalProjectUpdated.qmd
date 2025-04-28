@@ -681,6 +681,7 @@ I would like to see if principle component analysis (PCA) would be the best way 
 
 Ridge regression seemed to fit the data very well, and create a fairly accurate model. This model performed even better than my PCA model with 2 components, and gave me an MSE of about 6.94, using a lambda of just under 5. I think this is the best model that I created for this project.
 
+
 ```{r}
 suppressPackageStartupMessages(library(glmnet))
 suppressPackageStartupMessages(library(caret))
@@ -721,6 +722,7 @@ ggplot(df, aes(x = log_lambda, y = mse)) +
   theme_minimal()
 ```
 
+
 ### Principle Component Analysis (Supervised)
 
 I chose to use principle component analysis to find the optimal number of principle components to use when predicting. Below I have found using 5 fold cross validation, that 2 principle components creates the most accurate model. This gave me an MSE of just over 8.
@@ -752,7 +754,6 @@ mse <- mean((predictions - test_data$Wind)^2)
 cat("Test MSE:", mse, "\n")
 plot(pca_model)
 ```
-
 ### Natural Spline
 
 This model uses natural spline transformations on the continuous variables Ozone, Solar.R, and Temp to flexibly capture nonlinear relationships with Wind, while including categorical variables Month and Day as factors. Using 5-fold cross-validation, the best-performing model used 2 degrees of freedom for each spline and achieved a test MSE of approximately 10.97, indicating the average squared prediction error on unseen data.
@@ -798,6 +799,53 @@ cat("Best degrees of freedom:\n")
 print(best_params)
 cat("Test MSE for best spline model:", best_mse, "\n")
 ```
+
+## Will's Model Team Problem 
+
+I fit a BART to try to predict wind speed for the team section of our project. While the MSE was fairly low at a little over 9.5, I believe that other models are better at predicting wind speed. This dataset does not have many observations, or predictors which is generally needed for an accurate BART model. Despite this, it did seem to perform fairly well.
+
+```{r}
+suppressPackageStartupMessages(library(dbarts))
+suppressPackageStartupMessages(library(caret))
+data(airquality)
+team_data_frame <- airquality
+team_data_frame$Month <- as.factor(team_data_frame$Month)
+team_data_frame$Day <- as.factor(team_data_frame$Day)
+team_data_frame <- na.omit(team_data_frame)
+X <- team_data_frame[, c("Ozone", "Solar.R", "Temp", "Month", "Day")] 
+y <- team_data_frame$Wind 
+set.seed(123)
+folds <- createFolds(y, k = 5)
+mse_list <- c()
+for (i in 1:5) {
+  test_idx <- folds[[i]]
+  
+  X_train <- X[-test_idx, ]
+  y_train <- y[-test_idx]
+  X_test <- X[test_idx, ]
+  y_test <- y[test_idx]
+  X_train_matrix <- model.matrix(~ . -1, data = X_train) 
+  X_test_matrix <- model.matrix(~ . -1, data = X_test)
+  bart_fit <- bart(
+    x.train = X_train_matrix,
+    y.train = y_train,
+    x.test = X_test_matrix,
+    keeptrees = FALSE
+  )
+  
+  preds <- bart_fit$yhat.test.mean
+  mse <- mean((preds - y_test)^2)
+  
+  mse_list <- c(mse_list, mse)
+}
+
+# Final average MSE
+final_mse <- mean(mse_list)
+cat("5-Fold CV MSE for BART model predicting Wind:", final_mse, "\n")
+
+```
+
+
 
 ## Q3
 
