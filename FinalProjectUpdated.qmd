@@ -287,10 +287,8 @@ Multiple Linear Regression
 ```{r}
 library(caret)
 library(datasets)
-
 team_data_frame <- na.omit(team_data_frame)
 
-# Split the data into training and testing
 set.seed(44)
 index <- sample(1:nrow(team_data_frame), ceiling(0.85 * nrow(team_data_frame)))
 training_data <- team_data_frame[index, ]
@@ -298,25 +296,20 @@ validation_data <- team_data_frame[-index, ]
 
 # 10 fold CV
 train_control <- trainControl(method = "cv", number = 10)
-
 lm_cv_model <- train(Wind ~ Temp + Solar.R + Ozone, data = training_data,
                      method = "lm", trControl = train_control)
-
 print(lm_cv_model)
-
 lm_predictions <- predict(lm_cv_model, newdata = validation_data)
-
 validation_data$LM_Predictions <- lm_predictions
 
-lm_coef <- coef(lm_cv_model)
+
+lm_coef <- coef(lm_cv_model$finalModel)[-1]   
 lm_coef_df <- data.frame(Predictor = names(lm_coef), Coefficient = lm_coef)
 
-# Plot 
 ggplot(lm_coef_df, aes(x = Predictor, y = Coefficient)) +
   geom_bar(stat = "identity", fill = "lightblue") +
   labs(title = "Multiple Linear Regression Coefficients", x = "Predictor", y = "Coefficient Value") +
   theme_minimal()
-
 
 # MSPE
 lm_mspe <- mean((validation_data$Wind - lm_predictions)^2)
