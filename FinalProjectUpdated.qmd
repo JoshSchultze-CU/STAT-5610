@@ -937,7 +937,7 @@ Each individual must comment on their contributions to the team research questio
 
 Josh: I created and trained the neural network model for the team research question. A neural network seemed like it could be useful because it may find underlying patterns in the daily data, though we did not have a lot of training observations so it's reliability was not going to be likely very high. I also helped in creating the MSE plot.
 
-Rishi:
+Rishi: I created the random forest model to help predict wind speed and helps answer the team research question. 
 
 Chase: I created the gam model to help answer the team research question. The model ended seeming to be helpful when trying to predict wind speed in New York. 
 
