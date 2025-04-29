@@ -941,4 +941,4 @@ Rishi:
 
 Chase: I created the gam model to help answer the team research question. The model ended seeming to be helpful when trying to predict wind speed in New York. 
 
-Will:
+Will: I created and trained the BART model to help predict wind speed in NYC and answer the team research question. The model performed fairly well despite lacking a large amount of variables and observations, which is normally helpful for BART models.
