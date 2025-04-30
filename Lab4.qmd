@@ -214,6 +214,111 @@ The `Group` variable in the data set has values "StatCollab", "SLSp25", "IndoPro
 
     ```
 
+# Will Individual
+
+## 1.
+
+```{r}
+    df<-read.csv("Attitude.clean.csv")
+    head(df)
+    summary(df)
+    library(tidyverse)
+    dim(df)
+    km.out <- kmeans(df[,2:50], 3, nstart = 20)
+    par(mfrow = c(1, 2))
+```
+
+## 2.
+
+The clusters don’t line up  well with the original groups. Cluster 1 is mostly Group 2, Cluster 2 is a mix of Groups 1 and 2, and Cluster 3 only has a few points from Group 1. Group 3 barely shows up at all. This suggests the k-means clustering didn’t  capture the original group structure, probably because the features don’t separate the groups clearly.
+
+```{r}
+    table(km.out$cluster,df$Group)
+```
+
+## 3.
+
+When clustering the attitudes themselves instead of the people, we can see that certain survey items naturally grouped together. Cluster 1 grouped frequency questions and a few favorability ones, probably because they’re all about how often something is done or how common it is. Cluster 2 focused more on favorability, including questions like A2, A3, A4, and A15, so this group might reflect positive perception more directly. Cluster 3 is a mixed bag, but it includes a lot of the remaining frequency and favorability items that didn’t clearly fit the other two themes. It seems like the clusters separated questions based on type favorability vs. frequency.
+
+    ```{r}
+    df<-read.csv("Attitude.clean.csv")
+    library(tidyverse)
+    km.out <- kmeans(t(df[,2:50]), 3, nstart = 20)
+    df_transpose<-t(df)
+    cat("Groups in cluster 1", "\n","\n")
+    rownames(df_transpose[km.out$cluster==1,])
+    cat("Groups in cluster 2", "\n","\n")
+    rownames(df_transpose[km.out$cluster==2,])
+    cat("Groups in cluster 3", "\n","\n")
+    rownames(df_transpose[km.out$cluster==3,])
+
+    ```
+
+## 4.
+
+I used 4 clusters because there are 4 groups that we are trying to classify. I ran hierarchical clustering using both complete linkage with Euclidean distance and average linkage with Manhattan distance. The complete method gave me four clusters with sizes 72, 10, 4, and 7. The average method also gave four clusters but one of them only had a single point and the others were 84, 3, and 5. I went with the complete linkage because the groups were more balanced and made more sense overall. The average method felt too sensitive and seemed to overreact to outliers.
+
+```{r}
+df_scaled <- scale(df[, 2:50]) 
+dist_euc <- dist(df_scaled, method = "euclidean")
+dist_man <- dist(df_scaled, method = "manhattan")
+
+# Hierarchical clustering with two linkage methods
+hc_complete <- hclust(dist_euc, method = "complete")
+hc_average <- hclust(dist_man, method = "average")
+
+# Plot dendrograms
+plot(hc_complete, main = "Complete Linkage - Euclidean")
+plot(hc_average, main = "Average Linkage - Manhattan")
+
+# Cut dendrograms to choose k = 3 clusters
+clusters_complete <- cutree(hc_complete, k = 4)
+clusters_average <- cutree(hc_average, k = 4)
+
+# Compare clusters
+table(clusters_complete)
+table(clusters_average)
+```
+
+## 5.
+
+The dendrogram using complete linkage separated the data into four pretty distinct clusters. Cluster 1 had the majority of people from each group, but especially IndoPost24 and IndoProf24. That suggests these two groups are more similar to each other than the rest. Cluster 2 had just a few from the SCS and SLS groups, and clusters 3 and 4 had a couple IndoPost24 and IndoProf24 individuals. So overall, the hierarchical clustering kind of captured the general structure of the four original groups, but it mixed them together more than I expected.
+
+```{r}
+dist_euc <- dist(df_scaled, method = "euclidean")
+hc_complete <- hclust(dist_euc, method = "complete")
+plot(hc_complete, main = "Dendrogram - Complete Linkage (Individuals)", xlab = "", sub = "")
+rect.hclust(hc_complete, k = 4, border = "red") 
+cut_clusters <- cutree(hc_complete, k = 4)
+table(cut_clusters, df$Group) 
+
+```
+
+## 6.
+
+I clustered the attitudes using hierarchical clustering on the transposed data. I tested both Euclidean and correlation distance and ended up going with correlation since it captured more meaningful relationships between variables. I used average linkage because it grouped similar attitudes together without chaining or splitting too aggressively. The resulting clusters grouped attitudes that tended to move together across individuals, which gave a better sense of underlying patterns.
+
+```{r}
+df_att <- df[, 2:50]
+
+# Standardize data
+df_scaled <- scale(df_att)
+df_t <- t(df_att)  # Transpose the data
+df_t_scaled <- scale(df_t)
+dist_corr <- as.dist(1 - cor(t(df_t_scaled)))
+hc_att_avg <- hclust(dist_corr, method = "average")
+
+```
+
+## 7.
+
+The dendrogram for the attitudes using average linkage and correlation distance gave groupings that matched up pretty well with what I saw from the k-means clusters. A lot of the same attitudes that were grouped together before showed up in the same branches here too. This confirms that the patterns we picked up with k-means weren’t random and are consistent across different clustering approaches.
+
+```{r}
+plot(hc_att_avg, main = "Dendrogram - Average Linkage (Attitudes)", xlab = "", sub = "")
+rect.hclust(hc_att_avg, k = 4, border = "blue")  # Adjust k as needed
+```
+
 #### What teams need to do
 
 1.  Review and combine individual results. Which methods for clustering the data points seemed to correspond best with the pre-established groups? What $K$ gave you the best results? What linkage? What distance metric?
