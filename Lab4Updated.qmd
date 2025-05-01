@@ -420,7 +420,8 @@ kmean <- kmeans(df[,2:50], 4, nstart = 20)
 par(mfrow = c(1, 2)) 
 table(kmean$cluster,df$Group)
 ```
-2. ```{r}
+2. 
+```{r}
 kmean <- kmeans(df[,2:50], 4, nstart = 20)
 
 par(mfrow = c(1, 2)) 
