@@ -547,13 +547,15 @@ table(attitude_clusters)
 
     ## FINISH QUESTION 2 (What is our interpretation)
 
-3.  Create your team's final, best clustering of the data points. How well do the clusters correspond to the four groups?
-
+3. The clusters correspond fairly well to the four groups. IndoProf24 and StatCollab are mostly grouped together, while IndoPost24 is separated but still mixed with some other groups. SLSp25 is more scattered across different clusters, indicating some overlap.
     Below is the best clustering of the data points for clustering the four groups:
 
-    ```{r}
-
-    ```
+```{r}
+set.seed(44)
+km.out <- kmeans(df[, 2:50], 4, nstart = 20)
+# Output the cluster vs. actual group comparison
+table(km.out$cluster, df$Group)
+```
 
     The clustering of the groups seemed to be
 
@@ -568,7 +570,7 @@ table(attitude_clusters)
 ## When done we can write contributions here:
 
 Josh: I created a PCA and compared it's interpretability to the clustering methods. I also contributed to the interpretation section of question 2.
-
+Chase : I created our teams final clustering of data points using K-means.
 #### Potentially useful code below
 
 ```{r include=F}
