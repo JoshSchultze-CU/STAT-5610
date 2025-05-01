@@ -523,7 +523,7 @@ table(attitude_clusters)
 
 2.  Compare the results from Principal Component Analysis (PCA) with the results of clustering the attitudes. Which is more interpretable? What is your interpretation?
 
-    The clustering of attitudes seems to be much more interpretable because we can clearly see group assignments of which attitudes are linked together. PCA gives us a combination of attitudes, but it's difficult to identify grouping between all attitudes and where we should define our "cutoffs".
+    Clustering provides a more interpretable framework for understanding attitudes because it assigns each observation to a specific group, allowing for a direct examination of how attitudes cluster together in practice. This discrete categorization makes it easier to identify coherent patterns and relationships among variables. In comparison, PCA transforms the original variables into linear combinations that maximize variance, which, while useful for dimensionality reduction, often results in components that are more abstract and harder to interpret substantively. The lack of clear group boundaries in PCA makes it less effective for identifying distinct attitude profiles compared to clustering methods.
 
     Below are the results from PCA:
 
@@ -607,6 +607,8 @@ table(attitude_clusters)
 Josh: I created a PCA and compared it's interpretability to the clustering methods. I also contributed to the interpretation section of question 2. I also contributed to answering and verifying question 4
 
 Chase : I created our teams final clustering of data points using K-means.
+
+Will : I contributed to the interpretation of section 2 and general proof reading of the other questions as well
 
 #### Potentially useful code below
 
