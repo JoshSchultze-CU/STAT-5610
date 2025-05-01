@@ -426,7 +426,7 @@ kmean <- kmeans(df[,2:50], 4, nstart = 20)
 par(mfrow = c(1, 2)) 
 table(kmean$cluster,df$Group)
 ```
-3. 
+3. The attitudes are grouped into 4 clusters based on their frequencies and preferences. Cluster 1 contains attitudes like A23.fav and A24.fav, focused on preferences. Cluster 2 includes attitudes such as A1.fav, A3.fav, and A4.fav, which represent a different set of preferences. Cluster 3 groups attitudes like A1.freq, A3.freq, and A4.freq, which are more about frequency. Cluster 4 includes a mix of both frequency and preference attitudes, such as A9.fav, A10.fav, and A15.fav. Overall, similar types of attitudes (preference vs. frequency) are clustered together.
 ```{r}
 library(dplyr)
 attitude_data <- df[, !(names(df) %in% c("Name", "Group"))]
