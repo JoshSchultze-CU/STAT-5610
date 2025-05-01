@@ -412,6 +412,80 @@ I used average linkage because it gave smoother and more balanced clusters compa
 
 The dendrogram shows clear groupings of attitudes, where similar .freq and .fav variables are often placed in the same cluster. This supports what we saw with K-means attitudes that people experience often are usually seen in a similar way.
 
+# Chase Invidual 
+1. 
+```{r}
+kmean <- kmeans(df[,2:50], 4, nstart = 20)
+
+par(mfrow = c(1, 2)) 
+table(kmean$cluster,df$Group)
+```
+2. ```{r}
+kmean <- kmeans(df[,2:50], 4, nstart = 20)
+
+par(mfrow = c(1, 2)) 
+table(kmean$cluster,df$Group)
+```
+3. 
+```{r}
+library(dplyr)
+attitude_data <- df[, !(names(df) %in% c("Name", "Group"))]
+attitudes_t <- t(attitude_data)
+# K=4 cluster
+set.seed(44)
+attitude_kmeans <- kmeans(attitudes_t, centers = 4, nstart = 20)
+# Create df of attitude clusters
+attitude_clusters_df <- attitude_clusters_df[, 1:2]
+# Rename columns to be clear
+colnames(attitude_clusters_df) <- c("Attitude", "Cluster")
+# Sort by cluster
+attitude_clusters_df <- attitude_clusters_df %>% arrange(Cluster)
+print(attitude_clusters_df)
+```
+4. I picked 4 clusters because the dendrogram showed clear breaks between the groups. Euclidean distance worked best for the final clusters because it gave more understandable and clear groupings compared to Manhattan distance.
+```{r}
+data_matrix <- df %>% select(-Group)
+
+# Compute distance matrices
+dist_euclidean <- dist(data_matrix, method = "euclidean")
+dist_manhattan <- dist(data_matrix, method = "manhattan")
+
+# Hierarchical clustering with average linkage
+hc_euclidean <- hclust(dist_euclidean, method = "average")
+hc_manhattan <- hclust(dist_manhattan, method = "average")
+
+plot(hc_euclidean, main = "Average Linkage (Euclidean)", xlab = "", sub = "")
+plot(hc_manhattan, main = "Average Linkage (Manhattan)", xlab = "", sub = "")
+```
+5. The Euclidean distance dendrogram is the best choice. When I split it into 4 clusters, the groups mostly match up, but some clusters are a mix
+```{r}
+dist_data <- dist(df_scaled, method = "euclidean")
+hc_method <- hclust(dist_data, method = "complete")
+plot(hc_method, main = "Complete Linkage Indvidual", xlab = "", sub = "")
+rect.hclust(hc_method, k = 4, border = "blue")
+cluster_assignments <- cutree(hc_method, k = 4)
+table(cluster_assignments, df$Group)
+```
+6. I chose Euclidean distance because it's ideal for continuous data and measures straight-line distance between points. It works well for clustering attitudes, providing clear separation between similar groups.
+```{r}
+# Perform hierarchical clustering with complete linkage
+hc_attitudes_complete <- hclust(dist_attitudes, method = "complete")
+plot(hc_attitudes_complete, main = "Complete Linkage Attitude", xlab = "", sub = "")
+
+rect.hclust(hc_attitudes_complete, k = 4, border = "green")
+attitude_clusters <- cutree(hc_attitudes_complete, k = 4)
+table(attitude_clusters)
+```
+7. The dendrogram shows 4 clear clusters, each containing similar attitude variables. These clusters are well-separated, meaning the attitudes within each group are similar to each other.
+K-means just divides the data into 4 clusters, while the hierarchical clustering shows how these clusters form and how closely related the data points are. Hierarchical clustering gives more insight into how the clusters are connected.
+```{r}
+plot(hc_attitudes_complete, main = "Complete Linkage Attitudes", xlab = "", sub = "")
+rect.hclust(hc_attitudes_complete, k = 4, border = "green")
+
+attitude_clusters <- cutree(hc_attitudes_complete, k = 4)
+table(attitude_clusters)
+```
+
 #### What teams need to do
 
 1.  Review and combine individual results. Which methods for clustering the data points seemed to correspond best with the pre-established groups? What $K$ gave you the best results? What linkage? What distance metric?
