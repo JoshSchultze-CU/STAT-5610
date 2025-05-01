@@ -338,9 +338,7 @@ table(data$Group, data$cluster)
 
 ```
 
-2.  
-
-    The K-means clustering with K = 5 showed partial alignment with the actual groups. For example, Cluster 4 mostly captured IndoProf24 respondents, while Cluster 1 had a concentration of IndoPost24. Other clusters were more mixed, suggesting some shared attitude patterns across different respondent groups.
+2.  The K-means clustering with K = 5 showed partial alignment with the actual groups. For example, Cluster 4 mostly captured IndoProf24 respondents, while Cluster 1 had a concentration of IndoPost24. Other clusters were more mixed, suggesting some shared attitude patterns across different respondent groups.
 
 3.  
 
@@ -412,22 +410,28 @@ I used average linkage because it gave smoother and more balanced clusters compa
 
 The dendrogram shows clear groupings of attitudes, where similar .freq and .fav variables are often placed in the same cluster. This supports what we saw with K-means attitudes that people experience often are usually seen in a similar way.
 
-# Chase Invidual 
-1. 
+# Chase Individual
+
+1.  
+
 ```{r}
 kmean <- kmeans(df[,2:50], 4, nstart = 20)
 
 par(mfrow = c(1, 2)) 
 table(kmean$cluster,df$Group)
 ```
-2. 
+
+2.  
+
 ```{r}
 kmean <- kmeans(df[,2:50], 4, nstart = 20)
 
 par(mfrow = c(1, 2)) 
 table(kmean$cluster,df$Group)
 ```
-3. The attitudes are grouped into 4 clusters based on their frequencies and preferences. Cluster 1 contains attitudes like A23.fav and A24.fav, focused on preferences. Cluster 2 includes attitudes such as A1.fav, A3.fav, and A4.fav, which represent a different set of preferences. Cluster 3 groups attitudes like A1.freq, A3.freq, and A4.freq, which are more about frequency. Cluster 4 includes a mix of both frequency and preference attitudes, such as A9.fav, A10.fav, and A15.fav. Overall, similar types of attitudes (preference vs. frequency) are clustered together.
+
+3.  The attitudes are grouped into 4 clusters based on their frequencies and preferences. Cluster 1 contains attitudes like A23.fav and A24.fav, focused on preferences. Cluster 2 includes attitudes such as A1.fav, A3.fav, and A4.fav, which represent a different set of preferences. Cluster 3 groups attitudes like A1.freq, A3.freq, and A4.freq, which are more about frequency. Cluster 4 includes a mix of both frequency and preference attitudes, such as A9.fav, A10.fav, and A15.fav. Overall, similar types of attitudes (preference vs. frequency) are clustered together.
+
 ```{r}
 library(dplyr)
 attitude_data <- df[, !(names(df) %in% c("Name", "Group"))]
@@ -443,7 +447,9 @@ colnames(attitude_clusters_df) <- c("Attitude", "Cluster")
 attitude_clusters_df <- attitude_clusters_df %>% arrange(Cluster)
 print(attitude_clusters_df)
 ```
-4. I picked 4 clusters because the dendrogram showed clear breaks between the groups. Euclidean distance worked best for the final clusters because it gave more understandable and clear groupings compared to Manhattan distance.
+
+4.  I picked 4 clusters because the dendrogram showed clear breaks between the groups. Euclidean distance worked best for the final clusters because it gave more understandable and clear groupings compared to Manhattan distance.
+
 ```{r}
 data_matrix <- df %>% select(-Group)
 
@@ -458,7 +464,9 @@ hc_manhattan <- hclust(dist_manhattan, method = "average")
 plot(hc_euclidean, main = "Average Linkage (Euclidean)", xlab = "", sub = "")
 plot(hc_manhattan, main = "Average Linkage (Manhattan)", xlab = "", sub = "")
 ```
-5. The Euclidean distance dendrogram is the best choice. When I split it into 4 clusters, the groups mostly match up, but some clusters are a mix
+
+5.  The Euclidean distance dendrogram is the best choice. When I split it into 4 clusters, the groups mostly match up, but some clusters are a mix
+
 ```{r}
 dist_data <- dist(df_scaled, method = "euclidean")
 hc_method <- hclust(dist_data, method = "complete")
@@ -467,18 +475,22 @@ rect.hclust(hc_method, k = 4, border = "blue")
 cluster_assignments <- cutree(hc_method, k = 4)
 table(cluster_assignments, df$Group)
 ```
-6. I chose Euclidean distance because it's ideal for continuous data and measures straight-line distance between points. It works well for clustering attitudes, providing clear separation between similar groups.
+
+6.  I chose Euclidean distance because it's ideal for continuous data and measures straight-line distance between points. It works well for clustering attitudes, providing clear separation between similar groups.
+
 ```{r}
 # Perform hierarchical clustering with complete linkage
-hc_attitudes_complete <- hclust(dist_attitudes, method = "complete")
+X_t <- t(X_scaled)
+hc_attitudes_complete <- hclust(dist(X_t), method = "complete")
 plot(hc_attitudes_complete, main = "Complete Linkage Attitude", xlab = "", sub = "")
 
 rect.hclust(hc_attitudes_complete, k = 4, border = "green")
 attitude_clusters <- cutree(hc_attitudes_complete, k = 4)
 table(attitude_clusters)
 ```
-7. The dendrogram shows 4 clear clusters, each containing similar attitude variables. These clusters are well-separated, meaning the attitudes within each group are similar to each other.
-K-means just divides the data into 4 clusters, while the hierarchical clustering shows how these clusters form and how closely related the data points are. Hierarchical clustering gives more insight into how the clusters are connected.
+
+7.  The dendrogram shows 4 clear clusters, each containing similar attitude variables. These clusters are well-separated, meaning the attitudes within each group are similar to each other. K-means just divides the data into 4 clusters, while the hierarchical clustering shows how these clusters form and how closely related the data points are. Hierarchical clustering gives more insight into how the clusters are connected.
+
 ```{r}
 plot(hc_attitudes_complete, main = "Complete Linkage Attitudes", xlab = "", sub = "")
 rect.hclust(hc_attitudes_complete, k = 4, border = "green")
@@ -491,7 +503,23 @@ table(attitude_clusters)
 
 1.  Review and combine individual results. Which methods for clustering the data points seemed to correspond best with the pre-established groups? What $K$ gave you the best results? What linkage? What distance metric?
 
-    # NOT SURE HOW TO COMBINE RESULTS. Maybe just print all clustering results for the groups and pick the "best" one?
+    We had two "best" results. One resulted from k means and the other from heiracrchal clustering. They both had similar errors (although for different groups). The means method used a k of 4. The other method that seemed to correspond best with the pre-established groups was the hierarchical clustering with a cut at K=4. The linkage was complete and the distance was euclidean. We came to this conclusion after comparing the group containment for each model printed in the individual assignments. This method successfully separated Indo students from CU students fairly well when compared to the other models. This was also verified for the attitude data, though selecting the best model here was more difficult as no model performed significantly better than the other according to our data.
+
+    The print out below has the k means model and hierarchical clustering model that both performed similarly, though we ultimately used the k means model for question 3.
+
+    ```{r}
+    set.seed(44)
+    km.out <- kmeans(df[, 2:50], 4, nstart = 20)
+    # Output the cluster vs. actual group comparison
+    table(km.out$cluster, df$Group)
+
+    dist_euc <- dist(df_scaled, method = "euclidean")
+    hc_complete <- hclust(dist_euc, method = "complete")
+    plot(hc_complete, main = "Dendrogram - Complete Linkage (Individuals)", xlab = "", sub = "")
+    rect.hclust(hc_complete, k = 4, border = "red") 
+    cut_clusters <- cutree(hc_complete, k = 4)
+    table(cut_clusters, df$Group) 
+    ```
 
 2.  Compare the results from Principal Component Analysis (PCA) with the results of clustering the attitudes. Which is more interpretable? What is your interpretation?
 
@@ -541,36 +569,45 @@ table(attitude_clusters)
 
     ```
 
-    Using the PCA output for the first two principal components, which explained close to 40% of the variation in the data, we can see that some attitudes are scaled to be used higher in the principal components. Though the interpratability is difficult, we may attempt to interpret this as A6, A12, A16, A21, A25, A23 being related. Also, A1, A3, A4, A5, A9, A11, A15, A18, A19, A20 would be related. Next, A6, A7, A12, A13, A14, A16, A21 would be related. Finally, A2, A4, A5, A9, A10, and A18 would be related.
+    Using the PCA output for the first two principal components, which explained close to 40% of the variation in the data, we can see that some attitudes are scaled to be used higher in the principal components. Though the interpretability is difficult, we may attempt to interpret this as A6, A12, A16, A21, A25, A23 being related. Also, A1, A3, A4, A5, A9, A11, A15, A18, A19, A20 would be related. Next, A6, A7, A12, A13, A14, A16, A21 would be related. Finally, A2, A4, A5, A9, A10, and A18 would be related.
 
-    Using PCA and clustering, we see that the fav aspect and freq aspect of each attitude are usally grouped together which makes sense. These aspects would probably be interpreted differently by respondents. Beyond that, it was difficult to find groupings that were similar between these methods. More observations may be needed to create reliable groupings.
+    Using PCA and clustering, we see that the fav aspect and freq aspect of each attitude are usually grouped together which makes sense. These aspects would probably be interpreted differently by respondents. Beyond that, it was difficult to find groupings that were similar between these methods. More observations may be needed to create reliable groupings.
 
-    ## FINISH QUESTION 2 (What is our interpretation)
+3.  Create your team's final, best clustering of the data points. How well do the clusters correspond to the four groups?
 
-3. The clusters correspond fairly well to the four groups. IndoProf24 and StatCollab are mostly grouped together, while IndoPost24 is separated but still mixed with some other groups. SLSp25 is more scattered across different clusters, indicating some overlap.
-    Below is the best clustering of the data points for clustering the four groups:
+    The clusters correspond fairly well to the four groups. IndoProf24 and StatCollab are mostly grouped together, while IndoPost24 is separated but still mixed with some other groups. SLSp25 is more scattered across different clusters, indicating some overlap. Below is the best clustering of the data points for clustering the four groups:
 
-```{r}
-set.seed(44)
-km.out <- kmeans(df[, 2:50], 4, nstart = 20)
-# Output the cluster vs. actual group comparison
-table(km.out$cluster, df$Group)
-```
-
-    The clustering of the groups seemed to be
-
-    # Finish QUESTION 3
+    ```{r}
+    set.seed(44)
+    km.out <- kmeans(df[, 2:50], 4, nstart = 20)
+    # Output the cluster vs. actual group comparison
+    table(km.out$cluster, df$Group)
+    ```
 
 4.  Create your team's final, best clustering of the attitudes. What patterns do you see within the clusters of attitudes?
 
-    ## Finish Question 4. Are there any patterns in the clusters of attitudes?
+    Our best clustering of attitudes resulted from k=5 which successfully separated almost all of the attitudes. Some patters we saw were that A10, A9, and A24 were related. We also saw that attitudes A23, A25, and A21 were related. Next, we saw that A2, A8 and A22 were related. Beyond that, the clusters become larger and the patterns are harder to recognize in addition to the strength of their relationship being harder to verify. It does seem that attitudes with numbers near each other are usually clustered together which makes sense as most attitudes were asked about in sequences where they had similar emotional responses. Here is our best clustering of the attitudes:
+
+    ```{r}
+    X_t <- t(X_scaled)
+    set.seed(42)
+    kmeans_attitudes <- kmeans(X_t, centers = 5, nstart = 20)
+
+    attitude_clusters <- data.frame(
+      Attitude = colnames(X),
+      Cluster = kmeans_attitudes$cluster
+    )
+
+    attitude_clusters <- attitude_clusters %>% arrange(Cluster)
+    print(attitude_clusters)
+    ```
 
 5.  Write a paragraph about individual contributions. Each individual must comment on their contributions to the lab. Only individuals who contribute to the team section will get points for the team section. An example contribution could be: "I synthesized all of the individual results to find that such and such gave the best and most interpretable results. Then I recommended teammate X use this linkage and that distance measure for our team's cluster." Or, "I did the comparison of PCA with our clustering of the attitudes." Or, "I created our team's best clustering of the data points based on teammate Y's synthesis of our individual results." Or, "I took everyone's code and put it together into the qmd file and knitted it." Or, "I made the plot of our team's best clusters."
 
-## When done we can write contributions here:
+Josh: I created a PCA and compared it's interpretability to the clustering methods. I also contributed to the interpretation section of question 2. I also contributed to answering and verifying question 4
 
-Josh: I created a PCA and compared it's interpretability to the clustering methods. I also contributed to the interpretation section of question 2.
 Chase : I created our teams final clustering of data points using K-means.
+
 #### Potentially useful code below
 
 ```{r include=F}
