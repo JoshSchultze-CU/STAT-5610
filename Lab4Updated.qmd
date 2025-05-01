@@ -436,7 +436,7 @@ attitudes_t <- t(attitude_data)
 set.seed(44)
 attitude_kmeans <- kmeans(attitudes_t, centers = 4, nstart = 20)
 # Create df of attitude clusters
-attitude_clusters_df <- attitude_clusters_df[, 1:2]
+attitude_clusters_df <- data.frame(Attitude = rownames(attitudes_t), Cluster = attitude_kmeans$cluster)
 # Rename columns to be clear
 colnames(attitude_clusters_df) <- c("Attitude", "Cluster")
 # Sort by cluster
