@@ -610,6 +610,8 @@ Chase : I created our teams final clustering of data points using K-means.
 
 Will : I contributed to the interpretation of section 2 and general proof reading of the other questions as well
 
+Rishi: I did question 1 of the team section and helped where I could for other parts of the team section.
+
 #### Potentially useful code below
 
 ```{r include=F}
